@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model User {
+  id            String       @id @default(cuid())
+  username      String       @unique
+  email         String       @unique
+  emailVerified DateTime?    @default(now())
+  password      String
+  image         String?
+  isAdmin       Boolean       @default(false)
+
+  reviews Review[]
+
+  ratings Rating[]
+}
+
+model Anime {
+  id                String @id @default(cuid())
+  title             String
+  summary           String
+  creator           String
+  ep_count          Int
+  season            Int
+  image             String
+  genre             String
+
+
+  reviews           Review[]
+  ratings           Rating[]
+}
+
+model Character {
+  id                String @id @default(cuid())
+  name              String
+  role              String
+  image             String
+  desc              String
+  stats             Int
+  abilities         String
+  strength          String
+  weakness          String
+}
+
+model Episode {
+  id                String @id @default(cuid())
+  title             String
+  desc              String
+  eps_numq          Int?
+  season_num        Int?
+  summary           String
+  air_date          DateTime
+  image             String
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  content    String
+  reviewDate DateTime @default(now())
+  animeId    String
+  userId     String
+
+  // Relations
+  anime Anime @relation(fields: [animeId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([animeId, userId])
+}
+
+model Rating {
+  id            String @id @default(cuid())
+  animeId       String
+  userId        String
+  score         Float
+  ratingDate    DateTime
+
+  anime         Anime @relation(fields: [animeId], references: [id], onDelete: Cascade)
+  user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([animeId, userId])
+
+}
