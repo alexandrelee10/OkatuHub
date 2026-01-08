@@ -1,10 +1,15 @@
+import Link from 'next/link';
 import React from 'react'
+import NavBar from './components/NavBar'
+import Hero from './components/Hero'
 
 const HomePage = () => {
   return (
-    <div>
-      HomePage
-    </div>
+    <>  
+      <NavBar />
+      <Hero />
+
+    </>
   )
 }
 
