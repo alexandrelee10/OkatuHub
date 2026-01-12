@@ -8,23 +8,69 @@ import assets from "../assets/assets";
 const NavBar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+
+  const links = [
+    { label: "Anime", href: "/" },
+    { label: "Characters", href: "#" },
+    { label: "Genre", href: "#" },
+    { 
+      href: "#",
+      icon: assets.bookmark_icon,
+      alt: "favorites"
+    },
+
+    {
+      href: "/#",
+      icon: assets.search_icon,
+      alt: "",
+    },    
+    {
+      href: "/#",
+      icon: assets.profile_icon,
+      alt: "Sign in",
+    }
+  ];
+
+  // classname helper
+  function classnames(classes: Record<string, boolean>) {
+    return Object.entries(classes)
+      .filter(([, value]) => value)
+      .map(([cls]) => cls)
+      .join(" ");
+  }
+
   return (
     <>
       {/* TOP NAV */}
-      <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-b from-black to-zinc-900 text-white shadow-md">
+      <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-b from-black to-red-950 text-white shadow-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between h-16 px-6 sm:px-8 lg:px-10">
           {/* Logo */}
           <Link href="/" onClick={() => setSidebarOpen(false)}>
-            <img src={assets.logo} alt="" className=" h-15"/>
-
+            <img src={assets.logo} alt="Okatsu logo" className="h-10" />
           </Link>
 
           {/* Desktop links */}
           <ul className="hidden md:flex items-center gap-8 font-medium">
-            <Link href="/">Anime</Link>
-            <Link href="#">Characters</Link>
-            <Link href="#">Genres</Link>
-            <Link href="#"><img src={assets.person_icon} alt="" /></Link>
+            {links.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className=" hover:underline hover:text-zinc-800 transition-colors"
+                >
+                  {link.icon ? (
+                    <Image
+                      src={link.icon}
+                      alt={link.alt ?? "icon"}
+                      width={28}
+                      height={28}
+                      className="rounded-full hover:opacity-80 transition"
+                    />
+                  ) : (
+                    link.label
+                  )}
+                </Link>
+              </li>
+            ))}
           </ul>
 
           {/* Mobile menu button */}
@@ -74,22 +120,30 @@ const NavBar = () => {
             <span className="text-xl">✕</span>
           </button>
 
-          {/* Links – all close the menu */}
-          <Link href="/" onClick={() => setSidebarOpen(false)}>
-            Anime
-          </Link>
-          <Link href="#" onClick={() => setSidebarOpen(false)}>
-            Characters
-          </Link>
-          <Link href="#" onClick={() => setSidebarOpen(false)}>
-            Genres
-          </Link>
-          <Link href="#" onClick={() => setSidebarOpen(false)}>
-            Search
-          </Link>
-          <Link href="#" onClick={() => setSidebarOpen(false)}>
-            Sign in
-          </Link>
+          {/* Mobile links – reuse config if you want */}
+          {links.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setSidebarOpen(false)}
+              className="flex items-center gap-2"
+            >
+              {link.icon ? (
+                <>
+                  <Image
+                    src={link.icon}
+                    alt={link.alt ?? "icon"}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                  <span>Sign in</span>
+                </>
+              ) : (
+                link.label
+              )}
+            </Link>
+          ))}
         </div>
       </div>
     </>

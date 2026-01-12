@@ -7,7 +7,9 @@ const assets = {
   hero_3: "/assets/Hero/hero_3.png",
   menu_dark: "/assets/Icon/menu_icon_dark.svg",
   menu: "/assets/Icon/menu_icon.svg",
-  person_icon: "/assets/Icon/person_icon.svg"
+  profile_icon: "/assets/Icon/profile_icon.svg",
+  bookmark_icon: "/assets/Icon/bookmark.svg",
+  search_icon: "/assets/Icon/search_icon.svg"
 };
 
 export default assets;
