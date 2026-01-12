@@ -11,6 +11,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 
 }
 
@@ -26,6 +27,8 @@ model User {
   reviews Review[]
 
   ratings Rating[]
+
+  bookmarks Bookmark[]
 }
 
 model Anime {
@@ -41,6 +44,7 @@ model Anime {
 
   reviews           Review[]
   ratings           Rating[]
+  bookmarks Bookmark[]
 }
 
 model Character {
@@ -59,7 +63,7 @@ model Episode {
   id                String @id @default(cuid())
   title             String
   desc              String
-  eps_numq          Int?
+  eps_num           Int?
   season_num        Int?
   summary           String
   air_date          DateTime
@@ -85,11 +89,23 @@ model Rating {
   animeId       String
   userId        String
   score         Float
-  ratingDate    DateTime
+  ratingDate    DateTime @default(now())
 
   anime         Anime @relation(fields: [animeId], references: [id], onDelete: Cascade)
   user          User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([animeId, userId])
+}
 
+model Bookmark {
+  id       String   @id @default(cuid())
+  animeId  String
+  userId   String
+  saveDate DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  anime Anime @relation(fields: [animeId], references: [id], onDelete: Cascade)
+
+  @@unique([animeId, userId]) // one bookmark per user/anime
 }

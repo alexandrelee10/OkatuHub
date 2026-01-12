@@ -45,8 +45,8 @@ const NavBar = () => {
       <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-b from-black to-red-950 text-white shadow-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between h-16 px-6 sm:px-8 lg:px-10">
           {/* Logo */}
-          <Link href="/" onClick={() => setSidebarOpen(false)}>
-            <img src={assets.logo} alt="Okatsu logo" className="h-10" />
+          <Link href="/" onClick={() => setSidebarOpen(false)} className="flex lg:items-start">
+            <img src={assets.logo} alt="Okatsu logo" className="h-10 " />
           </Link>
 
           {/* Desktop links */}
