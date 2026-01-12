@@ -8,54 +8,59 @@ import assets from "../assets/assets";
 const NavBar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-
   const links = [
     { label: "Anime", href: "/" },
     { label: "Characters", href: "#" },
     { label: "Genre", href: "#" },
-    { 
+    {
       href: "#",
       icon: assets.bookmark_icon,
-      alt: "favorites"
+      alt: "Bookmark",
     },
-
     {
       href: "/#",
       icon: assets.search_icon,
-      alt: "",
-    },    
+      alt: "Search",
+    },
     {
-      href: "/#",
+      href: "/signin",
       icon: assets.profile_icon,
       alt: "Sign in",
-    }
+    },
   ];
-
-  // classname helper
-  function classnames(classes: Record<string, boolean>) {
-    return Object.entries(classes)
-      .filter(([, value]) => value)
-      .map(([cls]) => cls)
-      .join(" ");
-  }
 
   return (
     <>
       {/* TOP NAV */}
       <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-b from-black to-red-950 text-white shadow-md">
-        <div className="max-w-6xl mx-auto flex items-center justify-between h-16 px-6 sm:px-8 lg:px-10">
+        <div
+          className="
+            w-full flex items-center
+            justify-center md:justify-between
+            h-16 px-4 sm:px-8 lg:px-10
+            relative
+          "
+        >
           {/* Logo */}
-          <Link href="/" onClick={() => setSidebarOpen(false)} className="flex lg:items-start">
-            <img src={assets.logo} alt="Okatsu logo" className="h-10 " />
+          <Link
+            href="/"
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center justify-center md:justify-start"
+          >
+            <img
+              src={assets.logo}
+              alt="Okatsu logo"
+              className="h-12 md:h-14"
+            />
           </Link>
 
-          {/* Desktop links */}
-          <ul className="hidden md:flex items-center gap-8 font-medium">
+          {/* Desktop links (right side on md+) */}
+          <ul className="hidden md:flex items-center gap-8 font-medium ml-auto">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className=" hover:underline hover:text-zinc-800 transition-colors"
+                  className="hover:underline hover:text-zinc-300 transition-colors"
                 >
                   {link.icon ? (
                     <Image
@@ -73,9 +78,9 @@ const NavBar = () => {
             ))}
           </ul>
 
-          {/* Mobile menu button */}
+          {/* Mobile menu button (stays on the right, doesn't affect flex) */}
           <button
-            className="md:hidden"
+            className="md:hidden absolute right-4"
             onClick={() => setSidebarOpen(true)}
             aria-label="Open menu"
           >
@@ -120,7 +125,7 @@ const NavBar = () => {
             <span className="text-xl">✕</span>
           </button>
 
-          {/* Mobile links – reuse config if you want */}
+          {/* Mobile links */}
           {links.map((link) => (
             <Link
               key={link.href}
@@ -137,7 +142,7 @@ const NavBar = () => {
                     height={24}
                     className="rounded-full"
                   />
-                  <span>Sign in</span>
+                  <span>{link.alt}</span>
                 </>
               ) : (
                 link.label
