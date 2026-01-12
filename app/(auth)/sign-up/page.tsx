@@ -4,29 +4,76 @@ import assets from "@/app/assets/assets";
 import Link from "next/link";
 import Image from "next/image";
 import React, { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+
 
 const SignUpPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError("");
+  // handle submit 
+const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setError("");
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+  if (password !== confirmPassword) {
+    setError("Passwords do not match");
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  const formData = new FormData(e.currentTarget);
+
+  const payload = {
+    firstName: formData.get("firstname")?.toString() || "",
+    lastName: formData.get("lastname")?.toString() || "",
+    email: formData.get("email")?.toString() || "",
+    username: formData.get("username")?.toString() || "",
+    password,
+    confirmPassword,
+  };
+
+  try {
+    const res = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    console.log("Signup status:", res.status, "ok:", res.ok);
+
+    let data: any;
+    try {
+      data = await res.json();
+      console.log("Signup JSON:", data);
+    } catch (parseErr) {
+      console.error("Failed to parse JSON from signup:", parseErr);
+      setError("Server sent an invalid response.");
       return;
     }
 
-    setIsSubmitting(true);
+    if (!res.ok) {
+      setError(data.error || "Failed to sign up");
+      return;
+    }
 
-    const formData = new FormData(e.currentTarget);
-    console.log("Form values:", Object.fromEntries(formData));
-
+    // success
+    console.log("Signed up user:", data);
+    router.push('/')
+    
+  } catch (err) {
+    console.error("Signup request failed:", err);
+    setError("Something went wrong");
+  } finally {
     setIsSubmitting(false);
-  };
+  }
+};
+
+
 
   return (
     <section
@@ -41,7 +88,7 @@ const SignUpPage = () => {
             src={assets.logo}
             alt="Okatsu Logo"
             width={140}
-            height={40}
+            height={120}
             className="cursor-pointer"
           />
         </Link>
