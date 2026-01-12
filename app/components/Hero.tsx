@@ -4,7 +4,7 @@ const Hero = () => {
   return (
     <section
       id="hero"
-      className="relative mt-20 h-[calc(100vh-5rem)] w-full overflow-hidden"
+      className="relative mt-5 h-[calc(100vh-5rem)] w-full overflow-hidden"
     >
       {/* Background Image */}
       <img
