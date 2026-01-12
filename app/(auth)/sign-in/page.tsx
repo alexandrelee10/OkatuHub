@@ -24,8 +24,8 @@ const SignInPage = () => {
   return (
     <section id='signin' className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-red-950 px-4">
       <div className="w-full max-w-md bg-zinc-900/80 rounded-2xl shadow-xl p-8 text-white border border-zinc-800">
-        <h1 className="text-2xl font-semibold mb-2">Welcome back</h1>
-        <p className="text-zinc-400 mb-6 text-sm">
+        <h1 className="text-2xl font-semibold mb-2 text-center">Welcome back</h1>
+        <p className="text-zinc-400 mb-6 text-sm text-center">
           Sign in to continue exploring Okatsu.
         </p>
 

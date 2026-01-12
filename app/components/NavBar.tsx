@@ -23,7 +23,7 @@ const NavBar = () => {
       alt: "Search",
     },
     {
-      href: "/signin",
+      href: "/sign-in",
       icon: assets.profile_icon,
       alt: "Sign in",
     },

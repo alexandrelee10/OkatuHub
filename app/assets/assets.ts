@@ -5,6 +5,7 @@ const assets = {
   hero_1: "/assets/Hero/hero_1.png",
   hero_2: "/assets/Hero/hero_2.png",
   hero_3: "/assets/Hero/hero_3.png",
+  signup_her: "/assets/Hero/signup_hero.svg",
   menu_dark: "/assets/Icon/menu_icon_dark.svg",
   menu: "/assets/Icon/menu_icon.svg",
   profile_icon: "/assets/Icon/profile_icon.svg",
