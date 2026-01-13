@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyUserCredentials } from "@/app/lib/services/authService";
+import { SESSION_COOKIE_NAME } from "@/app/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -14,16 +15,28 @@ export async function POST(req: Request) {
     }
 
     const user = await verifyUserCredentials(email, password);
+    // verifyUserCredentials should return a "safe" user (no password)
 
-    // TODO later: set a session cookie here
-
-    return NextResponse.json(
+    const res = NextResponse.json(
       {
         message: "Sign in successful",
         user,
       },
       { status: 200 }
     );
+
+    // Set HttpOnly session cookie with user.id
+    res.cookies.set({
+      name: SESSION_COOKIE_NAME,
+      value: user.id, // your User id is a string (cuid())
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return res;
   } catch (err: any) {
     console.error("Sign in error:", err);
 
