@@ -30,11 +30,6 @@ const NavBar = () => {
   // Icon links (bookmark + search)
   const iconLinks = [
     {
-      href: "#",
-      icon: assets.bookmark_icon,
-      alt: "Bookmarks",
-    },
-    {
       href: "/#",
       icon: assets.search_icon,
       alt: "Search",
@@ -176,6 +171,27 @@ const NavBar = () => {
 
                 {menuOpen && (
                   <div className="absolute right-0 mt-2 w-40 bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg py-2 text-sm">
+                    <button
+                    type="button"
+                    className="w-full text-left px-4 py-2 hover:bg-zinc-800"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      router.push("/dashboard");
+                    }}
+                    >
+                      Dashboard
+                    </button>
+
+                    <button
+                      type="button"
+                      className="w-full text-left px-4 py-2 hover:bg-zinc-800"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/settings"); // later page
+                      }}
+                    >
+                      Favorites
+                    </button>
                     <button
                       type="button"
                       className="w-full text-left px-4 py-2 hover:bg-zinc-800"
@@ -346,11 +362,34 @@ const NavBar = () => {
                       onClick={() => {
                         setSidebarOpen(false);
                         setMobileProfileOpen(false);
+                        router.push("/dashboards");
+                      }}
+                    >
+                      Dashboard
+                    </button>
+                    <button
+                      type="button"
+                      className="text-left px-0 py-1 hover:text-red-300"
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setMobileProfileOpen(false);
+                        router.push("/favorites");
+                      }}
+                    >
+                      Favorites
+                    </button>
+                    <button
+                      type="button"
+                      className="text-left px-0 py-1 hover:text-red-300"
+                      onClick={() => {
+                        setSidebarOpen(false);
+                        setMobileProfileOpen(false);
                         router.push("/settings");
                       }}
                     >
                       Settings
                     </button>
+
                     <button
                       type="button"
                       className="text-left px-0 py-1 text-red-300 hover:text-red-400"
