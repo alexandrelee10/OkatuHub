@@ -28,7 +28,7 @@ model User {
 
 model Anime {
   id       String   @id @default(cuid())
-  title    String
+  title    String   @unique
   summary  String
   creator  String
   ep_count Int
@@ -39,6 +39,7 @@ model Anime {
   reviews   Review[]
   ratings   Rating[]
   bookmarks Bookmark[]
+  character   Character[]
 }
 
 model Character {
@@ -51,6 +52,8 @@ model Character {
   abilities String
   strength  String
   weakness  String
+
+  anime   Anime[]
 }
 
 model Episode {

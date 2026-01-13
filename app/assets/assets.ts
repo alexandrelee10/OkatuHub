@@ -11,7 +11,12 @@ const assets = {
   menu: "/assets/Icon/menu_icon.svg",
   profile_icon: "/assets/Icon/profile_icon.svg",
   bookmark_icon: "/assets/Icon/bookmark.svg",
-  search_icon: "/assets/Icon/search_icon.svg"
+  search_icon: "/assets/Icon/search_icon.svg",
+  bleach_cover: "/assets/Character/bleach.png",
+  demon_slayer_cover: "/assets/Character/demon_slayer.png",
+  jjk_cover: "/assets/Character/jjk.png",
+  naruto_cover: "/assets/Character/naruto.png",
+  solo_level_cover: "/assets/Character/solo_leveling.png"
 };
 
 export default assets;

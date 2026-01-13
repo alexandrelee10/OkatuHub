@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import assets from "../assets/assets";
+import UserAvatar from "./UserAvatar";
 
 interface SafeUser {
   id: string;
@@ -27,7 +28,7 @@ const NavBar = () => {
     { label: "Genre", href: "#" },
   ];
 
-  // Icon links (bookmark + search)
+  // Icon links (search, etc.)
   const iconLinks = [
     {
       href: "/#",
@@ -152,32 +153,23 @@ const NavBar = () => {
                   onClick={() => setMenuOpen((prev) => !prev)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-zinc-800 transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-red-700 flex items-center justify-center text-xs font-semibold">
-                    {user.image ? (
-                      <Image
-                        src={user.image}
-                        alt={user.username}
-                        width={32}
-                        height={32}
-                      />
-                    ) : (
-                      <span>
-                        {user.username?.charAt(0).toUpperCase() ?? "U"}
-                      </span>
-                    )}
-                  </div>
+                  <UserAvatar
+                    src={user.image}
+                    name={user.username}
+                    size={32}
+                  />
                   <span className="text-sm">{user.username}</span>
                 </button>
 
                 {menuOpen && (
                   <div className="absolute right-0 mt-2 w-40 bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg py-2 text-sm">
                     <button
-                    type="button"
-                    className="w-full text-left px-4 py-2 hover:bg-zinc-800"
-                    onClick={() => {
-                      setMenuOpen(false);
-                      router.push("/dashboard");
-                    }}
+                      type="button"
+                      className="w-full text-left px-4 py-2 hover:bg-zinc-800"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        router.push("/dashboard");
+                      }}
                     >
                       Dashboard
                     </button>
@@ -187,7 +179,7 @@ const NavBar = () => {
                       className="w-full text-left px-4 py-2 hover:bg-zinc-800"
                       onClick={() => {
                         setMenuOpen(false);
-                        router.push("/settings"); // later page
+                        router.push("/favorites"); // later page
                       }}
                     >
                       Favorites
@@ -272,7 +264,7 @@ const NavBar = () => {
             <span className="text-xl">✕</span>
           </button>
 
-          {/* MAIN LINKS (take up available height) */}
+          {/* MAIN LINKS */}
           <div className="flex-1 flex flex-col gap-4 mt-2">
             {navLinks.map((link) => (
               <Link
@@ -332,20 +324,11 @@ const NavBar = () => {
                   className="w-full flex items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-red-700 flex items-center justify-center text-xs font-semibold">
-                      {user.image ? (
-                        <Image
-                          src={user.image}
-                          alt={user.username}
-                          width={36}
-                          height={36}
-                        />
-                      ) : (
-                        <span>
-                          {user.username?.charAt(0).toUpperCase() ?? "U"}
-                        </span>
-                      )}
-                    </div>
+                    <UserAvatar
+                      src={user.image}
+                      name={user.username}
+                      size={36}
+                    />
                     <span className="text-sm">{user.username}</span>
                   </div>
                   <span className="text-lg">
@@ -362,7 +345,7 @@ const NavBar = () => {
                       onClick={() => {
                         setSidebarOpen(false);
                         setMobileProfileOpen(false);
-                        router.push("/dashboards");
+                        router.push("/dashboard");
                       }}
                     >
                       Dashboard
