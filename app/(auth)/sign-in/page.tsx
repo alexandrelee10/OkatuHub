@@ -4,19 +4,45 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import assets from "@/app/assets/assets";
+import { useRouter } from "next/navigation";
 
 const SignInPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError("");
 
     const formData = new FormData(e.currentTarget);
     const email = formData.get("email");
     const password = formData.get("password");
 
-    console.log("SIGN IN DATA:", { email, password });
+    try {
+      const res = await fetch("/api/auth/signin", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      console.log("Sign-in response:", data);
+
+      if (!res.ok) {
+        setError(data.error || "An error occurred during sign-in.");
+        return;
+      }
+
+      router.push("/");
+    } catch (err) {
+      console.error("Sign-in error:", err);
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
 
     // Fake delay
     setTimeout(() => setIsSubmitting(false), 1000);
