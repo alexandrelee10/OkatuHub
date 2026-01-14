@@ -1,61 +1,52 @@
-"use client";
-
 import Link from "next/link";
-import assets from "../assets/assets";
+import Image from "next/image";
+import prisma from "../lib/prisma";
 
-const characters = [
-  {
-    id: "1",
-    name: "Naruto Uzumaki",
-    anime: "Naruto Shippuden",
-    image: assets.naruto_pfp,
-  },
-  {
-    id: "2",
-    name: "Sasuke Uchiha",
-    anime: "Naruto Shippuden",
-    image: assets.sasuke_pfp,
-  },
-  {
-    id: "3",
-    name: "Kakashi Hatake",
-    anime: "Naruto Shippuden",
-    image: assets.kakashi_pfp,
-  },
-];
+const PopularCharacters = async () => {
+  const characters = await prisma.character.findMany({
+    take: 8,
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      anime: true,
+    },
+  });
 
-const PopularCharacters = () => {
   return (
     <section className="w-full px-4 sm:px-8 lg:px-16 py-12 bg-black text-white">
       <div className="max-w-7xl mx-auto text-center">
-        {/* Title */}
+
         <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-center">
           Popular Characters
         </h2>
 
-        {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-          {characters.map((char) => (
+          {characters.map((char: any) => (
             <Link
               key={char.id}
               href={`/characters/${char.id}`}
               className="group bg-zinc-900/80 border border-zinc-800 rounded-xl overflow-hidden shadow-md hover:shadow-lg hover:border-red-500 transition-all"
             >
-              {/* Image */}
               <div className="relative w-full h-40 sm:h-48 overflow-hidden">
-                <img
+                <Image
                   src={char.image}
                   alt={char.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
 
-              {/* Info */}
               <div className="p-3 space-y-1">
                 <h3 className="text-sm font-semibold group-hover:text-red-300 transition-colors">
                   {char.name}
                 </h3>
-                <p className="text-xs text-zinc-400">{char.anime}</p>
+                <p className="text-xs text-zinc-400 truncate">
+                  {Array.isArray(char.anime)
+                    ? char.anime.join(", ")
+                    : char.anime || ""}
+                </p>
               </div>
             </Link>
           ))}

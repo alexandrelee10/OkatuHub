@@ -17,9 +17,18 @@ const assets = {
   jjk_cover: "/assets/Anime/jjk_2.png",
   naruto_cover: "/assets/Anime/naruto.png",
   solo_level_cover: "/assets/Anime/solo_leveling.png",
+  
   sasuke_pfp: "/assets/Characters/sasuke.png",
   kakashi_pfp: "/assets/Characters/kakashi.png",
-  naruto_pfp: "/assets/Characters/naruto.png"
+  naruto_pfp: "/assets/Characters/naruto.png",
+  itachi_pfp: "/assets/Characters/itachi.png",
+  gojo_pfp: "/assets/Characters/gojo.png",
+  megumi_pfp: "/assets/Characters/megumi.png",
+  levi_pfp: "/assets/Characters/levi.png",
+  rengoku_pfp: "/assets/Characters/rengoku.png",
+  tanjiro_pfp: "/assets/Characters/tanjiro.png",
+  deku: "/assets/Characters/izuku.png"
+  
 };
 
 export default assets;

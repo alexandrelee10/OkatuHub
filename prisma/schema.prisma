@@ -44,14 +44,14 @@ model Anime {
 
 model Character {
   id        String @id @default(cuid())
-  name      String
-  role      String
+  name      String @unique
+  role      String?
   image     String
-  desc      String
-  stats     Int
-  abilities String
-  strength  String
-  weakness  String
+  desc      String?
+  stats     Int?
+  abilities String?
+  strength  String?
+  weakness  String?
 
   anime   Anime[]
 }

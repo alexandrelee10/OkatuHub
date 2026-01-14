@@ -83,7 +83,7 @@ const NavBar = () => {
   return (
     <>
       {/* TOP NAV */}
-      <nav className="fixed top-0 left-0 w-full z-50 bg-gradient-to-b from-black to-red-950 text-white shadow-md">
+      <nav className="fixed top-0 left-0 w-full z-50 bg-black text-white shadow-md">
         <div
           className="
             w-full flex items-center
@@ -112,8 +112,8 @@ const NavBar = () => {
             />
           </Link>
 
-          {/* Desktop links (right side on md+) */}
-          <ul className="hidden md:flex items-center gap-6 font-medium ml-auto">
+          {/* Desktop links */}
+          <ul className="hidden md:flex md:justify-center items-center gap-6 font-medium ml-auto">
             {/* Text links */}
             {navLinks.map((link) => (
               <li key={link.href}>
@@ -130,7 +130,7 @@ const NavBar = () => {
               </li>
             ))}
 
-            {/* NEW: search icon (desktop) – toggles dropdown */}
+            {/* Search */}
             <li>
               <button
                 type="button"
@@ -148,7 +148,7 @@ const NavBar = () => {
               </button>
             </li>
 
-            {/* Auth area (desktop) */}
+            {/* Auth area for desktop */}
             {!user ? (
               <li>
                 <Link
@@ -228,7 +228,7 @@ const NavBar = () => {
             )}
           </ul>
 
-          {/* Mobile menu button (stays on the right) */}
+          {/* Mobile menu button  */}
           <button
             className="md:hidden absolute right-4"
             onClick={() => {
@@ -243,7 +243,7 @@ const NavBar = () => {
           </button>
         </div>
 
-        {/* NEW: dropdown search bar (desktop + mobile, under nav) */}
+        {/* Dropdown search bar  */}
         {searchOpen && (
           <div className="w-full border-t border-zinc-800 bg-black/95 px-4 sm:px-8 lg:px-10 py-3">
             <form
