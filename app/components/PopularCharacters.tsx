@@ -1,44 +1,35 @@
 "use client";
 
 import Link from "next/link";
+import assets from "../assets/assets";
 
 const characters = [
   {
     id: "1",
     name: "Naruto Uzumaki",
     anime: "Naruto Shippuden",
-    image:
-      "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
+    image: assets.naruto_pfp,
   },
   {
     id: "2",
     name: "Sasuke Uchiha",
     anime: "Naruto Shippuden",
-    image:
-      "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
+    image: assets.sasuke_pfp,
   },
   {
     id: "3",
     name: "Kakashi Hatake",
     anime: "Naruto Shippuden",
-    image:
-      "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
-  },
-  {
-    id: "4",
-    name: "Itachi Uchiha",
-    anime: "Naruto Shippuden",
-    image:
-      "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
+    image: assets.kakashi_pfp,
   },
 ];
 
 const PopularCharacters = () => {
   return (
     <section className="w-full px-4 sm:px-8 lg:px-16 py-12 bg-black text-white">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto text-center">
         {/* Title */}
-        <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-left">
+        <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-center">
           Popular Characters
         </h2>
 

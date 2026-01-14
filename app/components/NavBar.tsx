@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import assets from "../assets/assets";
-import UserAvatar from "./UserAvatar";
 
 interface SafeUser {
   id: string;
@@ -19,6 +18,11 @@ const NavBar = () => {
   const [user, setUser] = useState<SafeUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false); // desktop profile dropdown
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false); // mobile bottom profile dropdown
+
+  // NEW: search dropdown state
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const router = useRouter();
 
   // Core navigation links (no icons)
@@ -26,15 +30,6 @@ const NavBar = () => {
     { label: "Anime", href: "/anime" },
     { label: "Characters", href: "#characters" },
     { label: "Genre", href: "#" },
-  ];
-
-  // Icon links (search, etc.)
-  const iconLinks = [
-    {
-      href: "/#",
-      icon: assets.search_icon,
-      alt: "Search",
-    },
   ];
 
   // Fetch current user on mount
@@ -76,6 +71,15 @@ const NavBar = () => {
     }
   };
 
+  // NEW: submit handler for dropdown search
+  const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const q = searchTerm.trim();
+    if (!q) return;
+    setSearchOpen(false);
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+  };
+
   return (
     <>
       {/* TOP NAV */}
@@ -95,6 +99,7 @@ const NavBar = () => {
               setSidebarOpen(false);
               setMenuOpen(false);
               setMobileProfileOpen(false);
+              setSearchOpen(false);
             }}
             className="flex items-center justify-center md:justify-start"
           >
@@ -108,33 +113,40 @@ const NavBar = () => {
           </Link>
 
           {/* Desktop links (right side on md+) */}
-          <ul className="hidden md:flex items-center gap-8 font-medium ml-auto">
+          <ul className="hidden md:flex items-center gap-6 font-medium ml-auto">
             {/* Text links */}
             {navLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   className="hover:underline hover:text-zinc-300 transition-colors"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setSearchOpen(false);
+                  }}
                 >
                   {link.label}
                 </Link>
               </li>
             ))}
 
-            {/* Icon links */}
-            {iconLinks.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href}>
-                  <Image
-                    src={link.icon}
-                    alt={link.alt}
-                    width={28}
-                    height={28}
-                    className="rounded-full hover:opacity-80 transition"
-                  />
-                </Link>
-              </li>
-            ))}
+            {/* NEW: search icon (desktop) – toggles dropdown */}
+            <li>
+              <button
+                type="button"
+                onClick={() => setSearchOpen((prev) => !prev)}
+                className="p-1 rounded-full hover:bg-zinc-800 transition-colors"
+                aria-label="Open search"
+              >
+                <Image
+                  src={assets.search_icon}
+                  alt="Search"
+                  width={26}
+                  height={26}
+                  className="rounded-full"
+                />
+              </button>
+            </li>
 
             {/* Auth area (desktop) */}
             {!user ? (
@@ -153,11 +165,20 @@ const NavBar = () => {
                   onClick={() => setMenuOpen((prev) => !prev)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-zinc-800 transition-colors"
                 >
-                  <UserAvatar
-                    src={user.image}
-                    name={user.username}
-                    size={32}
-                  />
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-red-700 flex items-center justify-center text-xs font-semibold">
+                    {user.image ? (
+                      <Image
+                        src={user.image}
+                        alt={user.username}
+                        width={32}
+                        height={32}
+                      />
+                    ) : (
+                      <span>
+                        {user.username?.charAt(0).toUpperCase() ?? "U"}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-sm">{user.username}</span>
                 </button>
 
@@ -179,7 +200,7 @@ const NavBar = () => {
                       className="w-full text-left px-4 py-2 hover:bg-zinc-800"
                       onClick={() => {
                         setMenuOpen(false);
-                        router.push("/favorites"); // later page
+                        router.push("/favorites");
                       }}
                     >
                       Favorites
@@ -189,7 +210,7 @@ const NavBar = () => {
                       className="w-full text-left px-4 py-2 hover:bg-zinc-800"
                       onClick={() => {
                         setMenuOpen(false);
-                        router.push("/settings"); // later page
+                        router.push("/settings");
                       }}
                     >
                       Settings
@@ -214,12 +235,55 @@ const NavBar = () => {
               setSidebarOpen(true);
               setMenuOpen(false);
               setMobileProfileOpen(false);
+              setSearchOpen(false);
             }}
             aria-label="Open menu"
           >
             <img src={assets.menu_dark} alt="Open menu" className="w-7 h-7" />
           </button>
         </div>
+
+        {/* NEW: dropdown search bar (desktop + mobile, under nav) */}
+        {searchOpen && (
+          <div className="w-full border-t border-zinc-800 bg-black/95 px-4 sm:px-8 lg:px-10 py-3">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="max-w-xl mx-auto relative"
+            >
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search shows & characters..."
+                className="
+                  w-full rounded-full bg-zinc-900/80 border border-zinc-700
+                  px-4 py-2 pr-10 text-sm
+                  focus:outline-none focus:ring-2 focus:ring-blue-700
+                  placeholder:text-zinc-500
+                "
+              />
+
+              {/* clear */}
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-8 flex items-center text-zinc-500 text-xs"
+                >
+                  ✕
+                </button>
+              )}
+
+              {/* submit icon */}
+              <button
+                type="submit"
+                className="absolute inset-y-0 right-2 flex items-center text-zinc-400 text-sm"
+              >
+                🔍
+              </button>
+            </form>
+          </div>
+        )}
       </nav>
 
       {/* MOBILE OVERLAY + SLIDE MENU (hidden on md+) */}
@@ -273,6 +337,7 @@ const NavBar = () => {
                 onClick={() => {
                   setSidebarOpen(false);
                   setMobileProfileOpen(false);
+                  setSearchOpen(false);
                 }}
                 className="block py-1"
               >
@@ -280,26 +345,24 @@ const NavBar = () => {
               </Link>
             ))}
 
-            {iconLinks.map((link) => (
-              <button
-                key={link.href}
-                onClick={() => {
-                  router.push(link.href);
-                  setSidebarOpen(false);
-                  setMobileProfileOpen(false);
-                }}
-                className="flex items-center gap-2 py-1"
-              >
-                <Image
-                  src={link.icon}
-                  alt={link.alt}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
-                />
-                <span>{link.alt}</span>
-              </button>
-            ))}
+            {/* Mobile search entry inside the menu */}
+            <button
+              type="button"
+              onClick={() => {
+                setSearchOpen(true);
+                setSidebarOpen(false); // close drawer, show dropdown search under nav
+              }}
+              className="flex items-center gap-2 py-1 text-sm text-zinc-300"
+            >
+              <Image
+                src={assets.search_icon}
+                alt="Search"
+                width={24}
+                height={24}
+                className="rounded-full"
+              />
+              <span>Search</span>
+            </button>
           </div>
 
           {/* BOTTOM PROFILE SECTION */}
@@ -310,6 +373,7 @@ const NavBar = () => {
                 onClick={() => {
                   setSidebarOpen(false);
                   setMobileProfileOpen(false);
+                  setSearchOpen(false);
                 }}
                 className="inline-block w-full text-sm px-4 py-2 rounded-full border border-red-500 hover:bg-red-600 transition-colors text-center"
               >
@@ -324,11 +388,20 @@ const NavBar = () => {
                   className="w-full flex items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3">
-                    <UserAvatar
-                      src={user.image}
-                      name={user.username}
-                      size={36}
-                    />
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-red-700 flex items-center justify-center text-xs font-semibold">
+                      {user.image ? (
+                        <Image
+                          src={user.image}
+                          alt={user.username}
+                          width={36}
+                          height={36}
+                        />
+                      ) : (
+                        <span>
+                          {user.username?.charAt(0).toUpperCase() ?? "U"}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-sm">{user.username}</span>
                   </div>
                   <span className="text-lg">
@@ -336,7 +409,6 @@ const NavBar = () => {
                   </span>
                 </button>
 
-                {/* Dropdown only when profile is clicked */}
                 {mobileProfileOpen && (
                   <div className="mt-3 flex flex-col gap-2 text-sm">
                     <button
@@ -345,6 +417,7 @@ const NavBar = () => {
                       onClick={() => {
                         setSidebarOpen(false);
                         setMobileProfileOpen(false);
+                        setSearchOpen(false);
                         router.push("/dashboard");
                       }}
                     >
@@ -356,6 +429,7 @@ const NavBar = () => {
                       onClick={() => {
                         setSidebarOpen(false);
                         setMobileProfileOpen(false);
+                        setSearchOpen(false);
                         router.push("/favorites");
                       }}
                     >
@@ -367,6 +441,7 @@ const NavBar = () => {
                       onClick={() => {
                         setSidebarOpen(false);
                         setMobileProfileOpen(false);
+                        setSearchOpen(false);
                         router.push("/settings");
                       }}
                     >
@@ -380,6 +455,7 @@ const NavBar = () => {
                         await handleLogout();
                         setSidebarOpen(false);
                         setMobileProfileOpen(false);
+                        setSearchOpen(false);
                       }}
                     >
                       Log out

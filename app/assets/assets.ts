@@ -16,7 +16,10 @@ const assets = {
   demon_slayer_cover: "/assets/Anime/demon_slayer_2.png",
   jjk_cover: "/assets/Anime/jjk_2.png",
   naruto_cover: "/assets/Anime/naruto.png",
-  solo_level_cover: "/assets/Anime/solo_leveling.png"
+  solo_level_cover: "/assets/Anime/solo_leveling.png",
+  sasuke_pfp: "/assets/Characters/sasuke.png",
+  kakashi_pfp: "/assets/Characters/kakashi.png",
+  naruto_pfp: "/assets/Characters/naruto.png"
 };
 
 export default assets;
