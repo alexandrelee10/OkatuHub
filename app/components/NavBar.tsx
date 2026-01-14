@@ -23,7 +23,7 @@ const NavBar = () => {
 
   // Core navigation links (no icons)
   const navLinks = [
-    { label: "Anime", href: "/" },
+    { label: "Anime", href: "/anime" },
     { label: "Characters", href: "#characters" },
     { label: "Genre", href: "#" },
   ];

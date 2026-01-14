@@ -12,8 +12,7 @@ async function main() {
       creator: "Tite Kubo",
       ep_count: 52,
       season: 1,
-      // just store a string; later your UI can map it to an actual asset
-      image: "/images/anime/bleach-tybw.jpg",
+      image: "/assets/Anime/bleach_v2.png",
       genre: "Action, Shounen, Supernatural",
     },
     {
@@ -23,18 +22,38 @@ async function main() {
       creator: "Gege Akutami",
       ep_count: 24,
       season: 1,
-      image: "/images/anime/jujutsu-kaisen.jpg",
+      image: "/assets/Anime/jjk_v2.png",
       genre: "Action, Dark Fantasy, Supernatural",
     },
     {
-      title: "Demon Slayer: Kimetsu no Yaiba",
+      title: "Demon Slayer",
       summary:
         "Tanjiro Kamado joins the Demon Slayer Corps after his family is slaughtered by demons.",
       creator: "Koyoharu Gotouge",
       ep_count: 26,
       season: 1,
-      image: "/images/anime/demon-slayer.jpg",
+      image: "/assets/Anime/demon_slayer_v2.png",
       genre: "Action, Historical, Supernatural",
+    },
+    {
+      title: "Naruto Shippuden",
+      summary:
+        "Naruto Uzumaki returns to Konoha after training with Jiraiya and continues his journey to become Hokage.",
+      creator: "Masashi Kishimoto",
+      ep_count: 500,
+      season: 13,
+      image: "/assets/Anime/naruto.png",
+      genre: "Action, Adventure, Comedy",
+    },
+    {
+      title: "Solo Leveling",
+      summary:
+        "A low-ranked player becomes the strongest in the game world.",
+      creator: "Choi Seung-hoon",
+      ep_count: 26,
+      season: 1,
+      image: "/assets/Anime/solo_leveling.png",
+      genre: "Action, Fantasy, Game",
     },
   ];
 

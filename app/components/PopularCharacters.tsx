@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 
-// Temporary sample data - Keep layout / seed data
 const characters = [
   {
     id: "1",
@@ -11,7 +10,28 @@ const characters = [
     image:
       "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
   },
-]
+  {
+    id: "2",
+    name: "Sasuke Uchiha",
+    anime: "Naruto Shippuden",
+    image:
+      "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
+  },
+  {
+    id: "3",
+    name: "Kakashi Hatake",
+    anime: "Naruto Shippuden",
+    image:
+      "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
+  },
+  {
+    id: "4",
+    name: "Itachi Uchiha",
+    anime: "Naruto Shippuden",
+    image:
+      "https://cdn.myanimelist.net/images/characters/10/73578.jpg",
+  },
+];
 
 const PopularCharacters = () => {
   return (

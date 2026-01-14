@@ -12,11 +12,11 @@ const assets = {
   profile_icon: "/assets/Icon/profile_icon.svg",
   bookmark_icon: "/assets/Icon/bookmark.svg",
   search_icon: "/assets/Icon/search_icon.svg",
-  bleach_cover: "/assets/Character/bleach.png",
-  demon_slayer_cover: "/assets/Character/demon_slayer.png",
-  jjk_cover: "/assets/Character/jjk.png",
-  naruto_cover: "/assets/Character/naruto.png",
-  solo_level_cover: "/assets/Character/solo_leveling.png"
+  bleach_cover: "/assets/Anime/bleach_2.png",
+  demon_slayer_cover: "/assets/Anime/demon_slayer_2.png",
+  jjk_cover: "/assets/Anime/jjk_2.png",
+  naruto_cover: "/assets/Anime/naruto.png",
+  solo_level_cover: "/assets/Anime/solo_leveling.png"
 };
 
 export default assets;
