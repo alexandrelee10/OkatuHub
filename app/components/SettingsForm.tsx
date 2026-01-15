@@ -107,13 +107,9 @@ export default function SettingsForm({ user }: SettingsFormProps) {
         </div>
 
         <div className="flex-1">
-          <ImageUploadDropzone
-            onUploaded={(url: string) => {
-              setImage(url); // 👈 save URL in state
-              setSuccess("Profile image uploaded. Don’t forget to save.");
-              setError("");
-            }}
-          />
+          <ImageUploadDropzone onUploaded={function (url: string): void {
+            throw new Error("Function not implemented.");
+          } }          />
           <p className="mt-1 text-xs text-zinc-500">
             Upload a square image for best results. Changes are saved when you
             click <span className="font-medium">“Save changes”</span>.
