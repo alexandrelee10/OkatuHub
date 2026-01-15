@@ -17,7 +17,7 @@ const assets = {
   jjk_cover: "/assets/Anime/jjk_2.png",
   naruto_cover: "/assets/Anime/naruto.png",
   solo_level_cover: "/assets/Anime/solo_leveling.png",
-  
+  aot_cover: "/assets/Anime/aot.png",
   sasuke_pfp: "/assets/Characters/sasuke.png",
   kakashi_pfp: "/assets/Characters/kakashi.png",
   naruto_pfp: "/assets/Characters/naruto.png",

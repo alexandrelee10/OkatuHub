@@ -11,6 +11,7 @@ interface SafeUser {
   username: string;
   email: string;
   image?: string | null;
+  isAdmin?: boolean; // 👈 ADD THIS
 }
 
 const NavBar = () => {
@@ -19,17 +20,16 @@ const NavBar = () => {
   const [menuOpen, setMenuOpen] = useState(false); // desktop profile dropdown
   const [mobileProfileOpen, setMobileProfileOpen] = useState(false); // mobile bottom profile dropdown
 
-  // NEW: search dropdown state
+  // search dropdown state
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const router = useRouter();
 
-  // Core navigation links (no icons)
+  // Core navigation links
   const navLinks = [
     { label: "Anime", href: "/anime" },
     { label: "Characters", href: "#characters" },
-    { label: "Genre", href: "#" },
   ];
 
   // Fetch current user on mount
@@ -46,7 +46,7 @@ const NavBar = () => {
         }
 
         const data = await res.json();
-        setUser(data.user);
+        setUser(data.user); // make sure /api/auth/me returns isAdmin
       } catch (err) {
         console.error("Failed to fetch current user:", err);
         setUser(null);
@@ -71,7 +71,7 @@ const NavBar = () => {
     }
   };
 
-  // NEW: submit handler for dropdown search
+  // submit handler for dropdown search
   const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const q = searchTerm.trim();
@@ -205,6 +205,7 @@ const NavBar = () => {
                     >
                       Favorites
                     </button>
+
                     <button
                       type="button"
                       className="w-full text-left px-4 py-2 hover:bg-zinc-800"
@@ -215,6 +216,21 @@ const NavBar = () => {
                     >
                       Settings
                     </button>
+
+                    {/* ✅ Admin Panel (DESKTOP) */}
+                    {user?.isAdmin && (
+                      <button
+                        type="button"
+                        className="w-full text-left px-4 py-2 hover:bg-zinc-800"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          router.push("/admin");
+                        }}
+                      >
+                        Admin Panel
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       className="w-full text-left px-4 py-2 text-red-300 hover:bg-zinc-800"
@@ -286,7 +302,7 @@ const NavBar = () => {
         )}
       </nav>
 
-      {/* MOBILE OVERLAY + SLIDE MENU (hidden on md+) */}
+      {/* MOBILE OVERLAY + SLIDE MENU */}
       <div
         className={`
           fixed inset-0 z-40 md:hidden
@@ -345,12 +361,12 @@ const NavBar = () => {
               </Link>
             ))}
 
-            {/* Mobile search entry inside the menu */}
+            {/* Mobile search entry */}
             <button
               type="button"
               onClick={() => {
                 setSearchOpen(true);
-                setSidebarOpen(false); // close drawer, show dropdown search under nav
+                setSidebarOpen(false);
               }}
               className="flex items-center gap-2 py-1 text-sm text-zinc-300"
             >
@@ -423,6 +439,7 @@ const NavBar = () => {
                     >
                       Dashboard
                     </button>
+
                     <button
                       type="button"
                       className="text-left px-0 py-1 hover:text-red-300"
@@ -435,6 +452,7 @@ const NavBar = () => {
                     >
                       Favorites
                     </button>
+
                     <button
                       type="button"
                       className="text-left px-0 py-1 hover:text-red-300"
@@ -447,6 +465,22 @@ const NavBar = () => {
                     >
                       Settings
                     </button>
+
+                    {/* ✅ Admin Panel (MOBILE) */}
+                    {user?.isAdmin && (
+                      <button
+                        type="button"
+                        className="text-left px-0 py-1 hover:text-red-300"
+                        onClick={() => {
+                          setSidebarOpen(false);
+                          setMobileProfileOpen(false);
+                          setSearchOpen(false);
+                          router.push("/admin");
+                        }}
+                      >
+                        Admin Panel
+                      </button>
+                    )}
 
                     <button
                       type="button"

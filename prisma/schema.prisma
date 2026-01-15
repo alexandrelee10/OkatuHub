@@ -53,7 +53,8 @@ model Character {
   strength  String?
   weakness  String?
 
-  anime   Anime[]
+  anime   Anime @relation(fields: [animeId], references: [id])
+  animeId   String
 }
 
 model Episode {

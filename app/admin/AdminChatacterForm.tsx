@@ -2,11 +2,15 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import ImageUploadDropzone from "@/app/components/ImageUploadDropzone";
 
 const AdminCharacterForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // NEW: store uploaded image URL
+  const [imageUrl, setImageUrl] = useState<string>("");
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -19,7 +23,8 @@ const AdminCharacterForm = () => {
     const payload = {
       name: formData.get("name")?.toString() || "",
       role: formData.get("role")?.toString() || "",
-      image: formData.get("image")?.toString() || "",
+      // 👇 use the URL from drag & drop, not from a text input
+      image: imageUrl,
       desc: formData.get("desc")?.toString() || "",
       stats: formData.get("stats")?.toString() || "",
       abilities: formData.get("abilities")?.toString() || "",
@@ -43,6 +48,7 @@ const AdminCharacterForm = () => {
 
       setMessage(`Character "${data.character.name}" created!`);
       (e.target as HTMLFormElement).reset();
+      setImageUrl(""); // clear uploaded image for next character
     } catch (err) {
       console.error(err);
       setError("Something went wrong");
@@ -58,7 +64,7 @@ const AdminCharacterForm = () => {
         Fill this out to add a character to your database.
       </p>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
+      <form className="space-y-4 justify-center" onSubmit={handleSubmit}>
         {/* Basic info */}
         <div className="flex gap-4">
           <div className="flex-1">
@@ -69,7 +75,7 @@ const AdminCharacterForm = () => {
               id="name"
               name="name"
               required
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"
               placeholder="Ichigo Kurosaki"
             />
           </div>
@@ -81,27 +87,35 @@ const AdminCharacterForm = () => {
               id="role"
               name="role"
               required
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"
               placeholder="Main Protagonist"
             />
           </div>
+          <div className="flex-1">
+            <label className="block text-xs mb-1" htmlFor="anime">
+              Anime *
+            </label>
+            <input
+              id="anime"
+              name="anime"
+              required
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"
+              placeholder="Bleach"
+            />
+          </div>
         </div>
+        {/* Image drag and drop*/}
+        <ImageUploadDropzone
+          label="Character image"
+          onUploaded={(url) => setImageUrl(url)}
+        />
 
-        {/* Image URL */}
-        <div>
-          <label className="block text-xs mb-1" htmlFor="image">
-            Image URL
-          </label>
-          <input
-            id="image"
-            name="image"
-            className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
-            placeholder="https://example.com/ichigo.png"
-          />
-          <p className="text-[10px] text-zinc-500 mt-1">
-            Later you can switch to local uploads, for now a URL is fine.
+        {imageUrl && (
+          <p className="text-[11px] text-zinc-400">
+            Saved image path:{" "}
+            <span className="text-red-300">{imageUrl}</span>
           </p>
-        </div>
+        )}
 
         {/* Stats / abilities */}
         <div className="flex gap-4">
@@ -113,7 +127,7 @@ const AdminCharacterForm = () => {
               id="stats"
               name="stats"
               type="number"
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"
               placeholder="90"
             />
           </div>
@@ -124,7 +138,7 @@ const AdminCharacterForm = () => {
             <input
               id="abilities"
               name="abilities"
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"
               placeholder="Getsuga Tenshou, Bankai..."
             />
           </div>
@@ -139,7 +153,7 @@ const AdminCharacterForm = () => {
             <input
               id="strength"
               name="strength"
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"
               placeholder="High combat instinct"
             />
           </div>
@@ -150,7 +164,7 @@ const AdminCharacterForm = () => {
             <input
               id="weakness"
               name="weakness"
-              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700"
+              className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700"
               placeholder="Reckless in battle"
             />
           </div>
@@ -165,7 +179,7 @@ const AdminCharacterForm = () => {
             id="desc"
             name="desc"
             rows={3}
-            className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-700 resize-none"
+            className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-700 resize-none"
             placeholder="Short character summary..."
           />
         </div>
@@ -183,7 +197,7 @@ const AdminCharacterForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full mt-2 rounded-lg bg-blue-700 hover:bg-blue-600 disabled:opacity-60 py-2 text-sm font-medium transition-colors"
+          className="w-full mt-2 rounded-lg bg-red-700 hover:bg-red-600 disabled:opacity-60 py-2 text-sm font-medium transition-colors"
         >
           {isSubmitting ? "Saving..." : "Add Character"}
         </button>

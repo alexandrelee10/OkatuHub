@@ -13,33 +13,26 @@ export default async function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black to-blue-950 text-white pt-24 pb-16 px-4">
+    <main className="min-h-screen bg-gradient-to-b from-black to-red-950 text-white pt-16 pb-24">
       <section className="max-w-5xl mx-auto space-y-8">
         {/* Top bar */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col">
-            <p className="text-xs text-zinc-400 mb-1">
+
+          <div className="flex flex-col text-center">
+            <p className="text-xs text-zinc-400 mb-1 text-center">
               Admin Panel
             </p>
-            <h1 className="text-2xl md:text-3xl font-semibold">
+            <h1 className="text-2xl md:text-3xl font-semibold justify-center align-items">
               Manage Okatsu Content
             </h1>
-            <p className="text-xs text-zinc-500 mt-1">
+            <p className="text-xs text-zinc-500 mt-1 text-center">
               Logged in as{" "}
               <span className="text-zinc-200">{user.username}</span>
             </p>
           </div>
 
-          <Link
-            href="/"
-            className="text-xs px-3 py-1.5 rounded-full border border-blue-500 hover:bg-blue-600 hover:border-blue-600 transition-colors"
-          >
-            ← Back to Home
-          </Link>
-        </div>
 
         {/* Content */}
-        <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr),minmax(0,1fr)]">
+        <div className="grid gap-6 md:grid-cols-[minmax(0,1.4fr),minmax(0,1fr)] justify-center">
           {/* Character form */}
           <AdminCharacterForm />
 
@@ -53,6 +46,14 @@ export default async function AdminPage() {
               <li>Feature certain shows on the homepage</li>
               <li>Review recent activity and reports</li>
             </ul>
+          </div>
+          <div>
+            <Link
+            href="/"
+            className="text-xs px-3 py-1.5 rounded-full border border-red-500 hover:bg-red-600 hover:border-red-600 transition-colors"
+          >
+            ← Back to Home
+          </Link>
           </div>
         </div>
       </section>

@@ -4,70 +4,75 @@ import prisma from "@/app/lib/prisma";
 import { Prisma } from "@prisma/client";
 
 type SearchPageProps = {
-  searchParams: {
+  // 🔴 searchParams is actually a Promise in your setup
+  searchParams: Promise<{
     q?: string;
-  };
+  }>;
 };
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-  const query = (searchParams.q || "").trim();
+  // ✅ unwrap the Promise
+  const { q } = await searchParams;
+
+  const query = (q || "").trim();
   const hasQuery = query.length > 0;
 
-  // 🔍 DEBUG: this will show you exactly what Next is passing in
-  // You can keep or remove later
-  console.log("SEARCH PARAMS ON SERVER:", searchParams);
+  // Optional debug (you can delete later)
+  console.log("SEARCH QUERY:", query);
 
-  const animeWhere: Prisma.AnimeWhereInput = hasQuery
-    ? {
-        OR: [
-          {
-            title: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-          {
-            genre: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-        ],
-      }
-    : {};
+  // If there is no query, don’t hit the DB at all
+  let animeList: Prisma.AnimeGetPayload<{}>[] = [];
+  let characterList: Prisma.CharacterGetPayload<{}>[] = [];
 
-  const characterWhere: Prisma.CharacterWhereInput = hasQuery
-    ? {
-        OR: [
-          {
-            name: {
-              contains: query,
-              mode: "insensitive",
-            },
+  if (hasQuery) {
+    const animeWhere: Prisma.AnimeWhereInput = {
+      OR: [
+        {
+          title: {
+            contains: query,
+            mode: "insensitive",
           },
-          {
-            desc: {
-              contains: query,
-              mode: "insensitive",
-            },
+        },
+        {
+          genre: {
+            contains: query,
+            mode: "insensitive",
           },
-        ],
-      }
-    : {};
+        },
+      ],
+    };
 
-  const [animeList, characterList] = await Promise.all([
-    prisma.anime.findMany({
-      where: animeWhere,
-      orderBy: { title: "asc" },
-    }),
-    prisma.character.findMany({
-      where: characterWhere,
-      orderBy: { name: "asc" },
-    }),
-  ]);
+    const characterWhere: Prisma.CharacterWhereInput = {
+      OR: [
+        {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          desc: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+      ],
+    };
+
+    [animeList, characterList] = await Promise.all([
+      prisma.anime.findMany({
+        where: animeWhere,
+        orderBy: { title: "asc" },
+      }),
+      prisma.character.findMany({
+        where: characterWhere,
+        orderBy: { name: "asc" },
+      }),
+    ]);
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black to-blue-950 text-white pt-24 pb-16 px-4">
+    <main className="min-h-screen bg-gradient-to-b from-black to-red-950 text-white pt-24 pb-16 px-4">
       <section className="max-w-6xl mx-auto space-y-10">
         {/* Header */}
         <div className="flex flex-col gap-2">
@@ -84,14 +89,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               "No search term provided."
             )}
           </p>
-
-          {/* Optional: inline debug of searchParams */}
-          <p className="text-[11px] text-zinc-500">
-            Debug searchParams:{" "}
-            <span className="break-all">
-              {JSON.stringify(searchParams)}
-            </span>
-          </p>
         </div>
 
         {/* SHOWS */}
@@ -100,7 +97,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <h2 className="text-lg font-semibold">Shows</h2>
             {hasQuery && (
               <span className="text-xs text-zinc-400">
-                {animeList.length} result{animeList.length === 1 ? "" : "s"}
+                {animeList.length} result
+                {animeList.length === 1 ? "" : "s"}
               </span>
             )}
           </div>
@@ -136,7 +134,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     </p>
                     <Link
                       href={`/anime/${anime.id}`}
-                      className="mt-2 text-[11px] text-blue-400 hover:text-blue-300"
+                      className="mt-2 text-[11px] text-red-400 hover:text-red-300"
                     >
                       View details →
                     </Link>
@@ -196,6 +194,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           )}
         </section>
       </section>
+      <div className="flex justify-center">
+          <Link
+            href="/"
+            className="text-md px-3 py-1.5 rounded-full border border-red-500 hover:bg-red-600 hover:border-red-600 transition-colors"
+          >
+            Back to Home
+          </Link>
+        </div>
     </main>
   );
 }

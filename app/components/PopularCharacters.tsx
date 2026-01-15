@@ -10,20 +10,24 @@ const PopularCharacters = async () => {
       id: true,
       name: true,
       image: true,
-      anime: true,
+      anime: {
+        select: {
+          id: true,
+          title: true,
+        },
+      },
     },
   });
 
   return (
     <section className="w-full px-4 sm:px-8 lg:px-16 py-12 bg-black text-white">
       <div className="max-w-7xl mx-auto text-center">
-
         <h2 className="text-2xl sm:text-3xl font-semibold mb-6 text-center">
           Popular Characters
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-          {characters.map((char: any) => (
+          {characters.map((char) => (
             <Link
               key={char.id}
               href={`/characters/${char.id}`}
@@ -42,10 +46,10 @@ const PopularCharacters = async () => {
                 <h3 className="text-sm font-semibold group-hover:text-red-300 transition-colors">
                   {char.name}
                 </h3>
+
+                {/* Anime title */}
                 <p className="text-xs text-zinc-400 truncate">
-                  {Array.isArray(char.anime)
-                    ? char.anime.join(", ")
-                    : char.anime || ""}
+                  {char.anime?.title ?? "Unknown anime"}
                 </p>
               </div>
             </Link>
