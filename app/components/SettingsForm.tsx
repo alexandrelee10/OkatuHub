@@ -2,6 +2,8 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import Image from "next/image";
+import ImageUploadDropzone from "./ImageUploadDropzone";
 
 interface SettingsFormProps {
   user: {
@@ -10,6 +12,7 @@ interface SettingsFormProps {
     lastName: string;
     username: string;
     email: string;
+    image?: string | null; // 👈 allow image from DB
   };
 }
 
@@ -19,6 +22,9 @@ export default function SettingsForm({ user }: SettingsFormProps) {
   const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
 
+  // 👇 NEW: profile image state
+  const [image, setImage] = useState<string>(user.image ?? "");
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
@@ -27,6 +33,9 @@ export default function SettingsForm({ user }: SettingsFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const initials =
+    `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,6 +52,7 @@ export default function SettingsForm({ user }: SettingsFormProps) {
           lastName,
           username,
           email,
+          image: image || undefined, // 👈 send image URL to API
           currentPassword: currentPassword || undefined,
           newPassword: newPassword || undefined,
           adminCode: adminCode || undefined,
@@ -73,6 +83,44 @@ export default function SettingsForm({ user }: SettingsFormProps) {
       onSubmit={handleSubmit}
       className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-6 space-y-6"
     >
+      {/* Avatar + upload */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-4">
+          <div className="relative h-16 w-16 rounded-full overflow-hidden border border-zinc-700 bg-zinc-800 flex items-center justify-center text-sm font-semibold text-zinc-200">
+            {image ? (
+              <Image
+                src={image}
+                alt={`${firstName} ${lastName}`}
+                fill
+                className="object-cover"
+              />
+            ) : (
+              <span>{initials || "U"}</span>
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium">
+              {firstName} {lastName}
+            </p>
+            <p className="text-xs text-zinc-500">{username}</p>
+          </div>
+        </div>
+
+        <div className="flex-1">
+          <ImageUploadDropzone
+            onUploaded={(url: string) => {
+              setImage(url); // 👈 save URL in state
+              setSuccess("Profile image uploaded. Don’t forget to save.");
+              setError("");
+            }}
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            Upload a square image for best results. Changes are saved when you
+            click <span className="font-medium">“Save changes”</span>.
+          </p>
+        </div>
+      </div>
+
       {/* Basic profile */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -205,3 +253,4 @@ export default function SettingsForm({ user }: SettingsFormProps) {
     </form>
   );
 }
+

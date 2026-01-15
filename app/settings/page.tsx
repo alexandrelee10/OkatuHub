@@ -28,7 +28,7 @@ export default async function SettingsPage() {
         <p className="text-sm text-zinc-400 text-center">
           Update your profile, login info, and admin access.
         </p>
-
+        
         <SettingsForm user={safeUser} />
         <HomeButton />
         </section>
