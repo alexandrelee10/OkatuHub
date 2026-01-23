@@ -6,6 +6,7 @@ import prisma from "@/app/lib/prisma";
 import UserAvatar from "../components/UserAvatar";
 import assets from "../assets/assets";
 import Image from "next/image";
+import NavBar from "../components/NavBar";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
       className="min-h-screen bg-gradient-to-b from-black to-blue-950 text-white pt-24 pb-16 px-4"
       id="dashboard"
     >
+      <NavBar />
       <section className="max-w-6xl mx-auto space-y-10">
         {/* Top row: Logo + Avatar + Welcome */}
         <div className="flex flex-col items-center gap-4 text-center">

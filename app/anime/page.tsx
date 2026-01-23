@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/app/lib/prisma";
 import UserAvatar from "../components/UserAvatar";
+import NavBar from "../components/NavBar";
 
 export default async function AnimePage() {
   const animeList = await prisma.anime.findMany({
@@ -10,10 +11,9 @@ export default async function AnimePage() {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black to-red-950 text-white pt-24 pb-16 px-4">
-      <section className="max-w-6xl mx-auto space-y-8">
-        <div>
-        </div>
+    <main className="min-h-screen bg-gradient-to-b from-black to-red-950 text-white pt-24 pb-16 px-4">        
+      <NavBar />
+      <section className="max-w-6xl mx-auto space-y-8">        
         {/* Header */}
         <div className="flex flex-col gap-2 text-center items-center">
           <h1 className="text-3xl md:text-4xl font-semibold">
@@ -77,14 +77,7 @@ export default async function AnimePage() {
           ))}
         </div>
         {/* Footer nav */}
-        <div className="flex justify-center">
-          <Link
-            href="/"
-            className="text-md px-3 py-1.5 rounded-full border border-red-500 hover:bg-red-600 hover:border-red-600 transition-colors"
-          >
-            Back to Home
-          </Link>
-        </div>
+
       </section>
     </main>
   );

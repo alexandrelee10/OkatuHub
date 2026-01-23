@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, FormEvent } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import assets from "../assets/assets";
 
 interface SafeUser {
@@ -11,67 +11,89 @@ interface SafeUser {
   username: string;
   email: string;
   image?: string | null;
-  isAdmin?: boolean; // 👈 ADD THIS
+  isAdmin?: boolean;
 }
 
 const NavBar = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<SafeUser | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false); // desktop profile dropdown
-  const [mobileProfileOpen, setMobileProfileOpen] = useState(false); // mobile bottom profile dropdown
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
 
   // search dropdown state
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Core navigation links
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLDivElement | null>(null);
+
   const navLinks = [
     { label: "Anime", href: "/anime" },
     { label: "Characters", href: "#characters" },
   ];
 
+  const closeAll = () => {
+    setSidebarOpen(false);
+    setMenuOpen(false);
+    setMobileProfileOpen(false);
+    setSearchOpen(false);
+  };
+
   // Fetch current user on mount
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch("/api/auth/me", {
-          credentials: "include",
-        });
-
-        if (!res.ok) {
-          setUser(null);
-          return;
-        }
-
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        if (!res.ok) return setUser(null);
         const data = await res.json();
-        setUser(data.user); // make sure /api/auth/me returns isAdmin
+        setUser(data.user);
       } catch (err) {
         console.error("Failed to fetch current user:", err);
         setUser(null);
       }
     };
-
     fetchUser();
   }, []);
 
+  // Close dropdowns on outside click / Esc
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (menuOpen && menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
+      if (searchOpen && searchRef.current && !searchRef.current.contains(t)) setSearchOpen(false);
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setSearchOpen(false);
+        setSidebarOpen(false);
+        setMobileProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen, searchOpen]);
+
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
       setUser(null);
-      setMenuOpen(false);
-      setMobileProfileOpen(false);
+      closeAll();
       router.push("/");
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
 
-  // submit handler for dropdown search
   const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const q = searchTerm.trim();
@@ -80,226 +102,176 @@ const NavBar = () => {
     router.push(`/search?q=${encodeURIComponent(q)}`);
   };
 
+  const isActive = (href: string) => {
+    if (href.startsWith("#")) return false;
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
   return (
     <>
       {/* TOP NAV */}
-      <nav className="fixed top-0 left-0 w-full z-50 bg-black text-white shadow-md">
-        <div
-          className="
-            w-full flex items-center
-            justify-center md:justify-between
-            h-16 px-4 sm:px-8 lg:px-10
-            relative
-          "
-        >
-          {/* Logo */}
-          <Link
-            href="/"
-            onClick={() => {
-              setSidebarOpen(false);
-              setMenuOpen(false);
-              setMobileProfileOpen(false);
-              setSearchOpen(false);
-            }}
-            className="flex items-center justify-center md:justify-start"
-          >
-            <Image
-              src={assets.logo}
-              alt="Okatsu logo"
-              className="h-12 md:h-14 w-auto"
-              width={160}
-              height={56}
-            />
-          </Link>
+      <nav className="fixed top-0 w-full z-999">
+        {/* subtle blur + border for modern look */}
+        <div className="bg-black/70 backdrop-blur-xl border-b border-white/10">
+          <div className="max-w-6xl mx-auto h-16 px-4 sm:px-8 lg:px-10 flex items-center gap-4">
+            {/* Logo */}
+            <Link
+              href="/"
+              onClick={closeAll}
+              className="flex items-center gap-3 shrink-0"
+              aria-label="Okatsu home"
+            >
+              <Image
+                src={assets.logo}
+                alt="Okatsu logo"
+                width={140}
+                height={44}
+                className="h-14 w-auto"
+                priority
+              />
+            </Link>
 
-          {/* Desktop links */}
-          <ul className="hidden md:flex md:justify-center items-center gap-6 font-medium ml-auto">
-            {/* Text links */}
-            {navLinks.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="hover:underline hover:text-zinc-300 transition-colors"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setSearchOpen(false);
-                  }}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
+            {/* Desktop links */}
+            <ul className="hidden md:flex items-center gap-2">
+              {navLinks.map((link) => {
+                const active = isActive(link.href);
+                return (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setSearchOpen(false);
+                      }}
+                      className={[
+                        "px-3 py-2 rounded-full text-sm transition",
+                        active
+                          ? "bg-white/10 text-white"
+                          : "text-zinc-300 hover:text-white hover:bg-white/5",
+                      ].join(" ")}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
 
-            {/* Search */}
-            <li>
-              <button
-                type="button"
-                onClick={() => setSearchOpen((prev) => !prev)}
-                className="p-1 rounded-full hover:bg-zinc-800 transition-colors"
-                aria-label="Open search"
-              >
-                <Image
-                  src={assets.search_icon}
-                  alt="Search"
-                  width={26}
-                  height={26}
-                  className="rounded-full"
-                />
-              </button>
-            </li>
+            {/* Right side */}
+            <div className="ml-auto hidden md:flex items-center gap-2">
 
-            {/* Auth area for desktop */}
-            {!user ? (
-              <li>
+              {/* Auth area for desktop */}
+              {!user ? (
                 <Link
                   href="/sign-in"
-                  className="text-sm px-4 py-1.5 rounded-full border border-red-500 hover:bg-red-600 hover:border-red-600 transition-colors"
+                  className="text-sm px-4 py-2 rounded-full bg-red-600 hover:bg-red-500 transition shadow-sm"
                 >
                   Sign In
                 </Link>
-              </li>
-            ) : (
-              <li className="relative">
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-zinc-800 transition-colors"
-                >
-                  <div className="w-8 h-8 rounded-full overflow-hidden bg-red-700 flex items-center justify-center text-xs font-semibold">
-                    {user.image ? (
-                      <Image
-                        src={user.image}
-                        alt={user.username}
-                        width={32}
-                        height={32}
-                      />
-                    ) : (
-                      <span>
-                        {user.username?.charAt(0).toUpperCase() ?? "U"}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-sm">{user.username}</span>
-                </button>
+              ) : (
+                <div ref={menuRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen((prev) => !prev);
+                      setSearchOpen(false);
+                    }}
+                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 transition"
+                  >
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-red-600/80 flex items-center justify-center text-xs font-semibold ring-1 ring-white/10">
+                      {user.image ? (
+                        <Image src={user.image} alt={user.username} width={32} height={32} />
+                      ) : (
+                        <span>{user.username?.charAt(0).toUpperCase() ?? "U"}</span>
+                      )}
+                    </div>
+                    <span className="text-sm text-zinc-100 max-w-[120px] truncate">{user.username}</span>
+                    <span className="text-zinc-300 text-xs">▾</span>
+                  </button>
 
-                {menuOpen && (
-                  <div className="absolute right-0 mt-2 w-40 bg-zinc-900 border border-zinc-700 rounded-xl shadow-lg py-2 text-sm">
-                    <button
-                      type="button"
-                      className="w-full text-left px-4 py-2 hover:bg-zinc-800"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        router.push("/dashboard");
-                      }}
-                    >
-                      Dashboard
-                    </button>
+                  {menuOpen && (
+                    <div className="absolute right-0 mt-2 w-52 rounded-2xl bg-zinc-950/95 backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden">
+                      <div className="px-4 py-3 border-b border-white/10">
+                        <p className="text-xs text-zinc-400">Signed in as</p>
+                        <p className="text-sm text-white truncate">{user.email}</p>
+                      </div>
 
-                    <button
-                      type="button"
-                      className="w-full text-left px-4 py-2 hover:bg-zinc-800"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        router.push("/favorites");
-                      }}
-                    >
-                      Favorites
-                    </button>
+                      <div className="py-2 text-sm">
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-2 hover:bg-white/5"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push("/dashboard");
+                          }}
+                        >
+                          Dashboard
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-2 hover:bg-white/5"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push("/favorites");
+                          }}
+                        >
+                          Favorites
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-2 hover:bg-white/5"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            router.push("/settings");
+                          }}
+                        >
+                          Settings
+                        </button>
 
-                    <button
-                      type="button"
-                      className="w-full text-left px-4 py-2 hover:bg-zinc-800"
-                      onClick={() => {
-                        setMenuOpen(false);
-                        router.push("/settings");
-                      }}
-                    >
-                      Settings
-                    </button>
+                        {user?.isAdmin && (
+                          <button
+                            type="button"
+                            className="w-full text-left px-4 py-2 hover:bg-white/5"
+                            onClick={() => {
+                              setMenuOpen(false);
+                              router.push("/admin");
+                            }}
+                          >
+                            Admin Panel
+                          </button>
+                        )}
 
-                    {/* ✅ Admin Panel (DESKTOP) */}
-                    {user?.isAdmin && (
-                      <button
-                        type="button"
-                        className="w-full text-left px-4 py-2 hover:bg-zinc-800"
-                        onClick={() => {
-                          setMenuOpen(false);
-                          router.push("/admin");
-                        }}
-                      >
-                        Admin Panel
-                      </button>
-                    )}
+                        <div className="h-px bg-white/10 my-2" />
 
-                    <button
-                      type="button"
-                      className="w-full text-left px-4 py-2 text-red-300 hover:bg-zinc-800"
-                      onClick={handleLogout}
-                    >
-                      Log out
-                    </button>
-                  </div>
-                )}
-              </li>
-            )}
-          </ul>
-
-          {/* Mobile menu button  */}
-          <button
-            className="md:hidden absolute right-4"
-            onClick={() => {
-              setSidebarOpen(true);
-              setMenuOpen(false);
-              setMobileProfileOpen(false);
-              setSearchOpen(false);
-            }}
-            aria-label="Open menu"
-          >
-            <img src={assets.menu_dark} alt="Open menu" className="w-7 h-7" />
-          </button>
-        </div>
-
-        {/* Dropdown search bar  */}
-        {searchOpen && (
-          <div className="w-full border-t border-zinc-800 bg-black/95 px-4 sm:px-8 lg:px-10 py-3">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="max-w-xl mx-auto relative"
-            >
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search shows & characters..."
-                className="
-                  w-full rounded-full bg-zinc-900/80 border border-zinc-700
-                  px-4 py-2 pr-10 text-sm
-                  focus:outline-none focus:ring-2 focus:ring-blue-700
-                  placeholder:text-zinc-500
-                "
-              />
-
-              {/* clear */}
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm("")}
-                  className="absolute inset-y-0 right-8 flex items-center text-zinc-500 text-xs"
-                >
-                  ✕
-                </button>
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-2 text-red-300 hover:bg-white/5"
+                          onClick={handleLogout}
+                        >
+                          Log out
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
+            </div>
 
-              {/* submit icon */}
-              <button
-                type="submit"
-                className="absolute inset-y-0 right-2 flex items-center text-zinc-400 text-sm"
-              >
-                🔍
-              </button>
-            </form>
+            {/* Mobile menu button */}
+            <button
+              className="md:hidden ml-auto inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition"
+              onClick={() => {
+                setSidebarOpen(true);
+                setMenuOpen(false);
+                setMobileProfileOpen(false);
+                setSearchOpen(false);
+              }}
+              aria-label="Open menu"
+            >
+              <Image src={assets.menu_dark} alt="Open menu" width={22} height={22} />
+            </button>
           </div>
-        )}
+        </div>
       </nav>
 
       {/* MOBILE OVERLAY + SLIDE MENU */}
@@ -312,7 +284,7 @@ const NavBar = () => {
         {/* Backdrop */}
         <div
           className={`
-            absolute inset-0 bg-black/60
+            absolute inset-0 bg-black/70
             transition-opacity duration-300
             ${sidebarOpen ? "opacity-100" : "opacity-0"}
           `}
@@ -325,27 +297,53 @@ const NavBar = () => {
         {/* Slide-out panel */}
         <div
           className={`
-            absolute top-0 right-0 h-full w-60
-            bg-black text-white
-            p-6 flex flex-col
+            absolute top-0 right-0 h-full w-[78%] max-w-xs
+            bg-zinc-950/95 backdrop-blur-xl
+            border-l border-white/10
+            p-5 flex flex-col
             transform transition-transform duration-300
             ${sidebarOpen ? "translate-x-0" : "translate-x-full"}
           `}
         >
-          {/* Close button */}
-          <button
-            className="self-end mb-4"
-            onClick={() => {
-              setSidebarOpen(false);
-              setMobileProfileOpen(false);
-            }}
-            aria-label="Close menu"
-          >
-            <span className="text-xl">✕</span>
-          </button>
+          {/* Top row */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-zinc-300">Menu</span>
+            <button
+              className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition"
+              onClick={() => {
+                setSidebarOpen(false);
+                setMobileProfileOpen(false);
+              }}
+              aria-label="Close menu"
+            >
+              <span className="text-xl text-white">✕</span>
+            </button>
+          </div>
 
-          {/* MAIN LINKS */}
-          <div className="flex-1 flex flex-col gap-4 mt-2">
+          {/* Search */}
+          <form
+            onSubmit={(e) => {
+              handleSearchSubmit(e);
+              setSidebarOpen(false);
+            }}
+            className="mt-5 flex gap-2"
+          >
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search..."
+              className="flex-1 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-zinc-400 outline-none focus:border-red-500/60"
+            />
+            <button
+              type="submit"
+              className="rounded-xl px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-500 transition"
+            >
+              Go
+            </button>
+          </form>
+
+          {/* Links */}
+          <div className="mt-6 flex-1 flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -355,126 +353,85 @@ const NavBar = () => {
                   setMobileProfileOpen(false);
                   setSearchOpen(false);
                 }}
-                className="block py-1"
+                className="px-3 py-2 rounded-xl text-zinc-200 hover:bg-white/5 transition"
               >
                 {link.label}
               </Link>
             ))}
-
-            {/* Mobile search entry */}
-            <button
-              type="button"
-              onClick={() => {
-                setSearchOpen(true);
-                setSidebarOpen(false);
-              }}
-              className="flex items-center gap-2 py-1 text-sm text-zinc-300"
-            >
-              <Image
-                src={assets.search_icon}
-                alt="Search"
-                width={24}
-                height={24}
-                className="rounded-full"
-              />
-              <span>Search</span>
-            </button>
           </div>
 
-          {/* BOTTOM PROFILE SECTION */}
-          <div className="border-t border-zinc-800 pt-4">
+          {/* Bottom profile */}
+          <div className="border-t border-white/10 pt-4">
             {!user ? (
               <Link
                 href="/sign-in"
-                onClick={() => {
-                  setSidebarOpen(false);
-                  setMobileProfileOpen(false);
-                  setSearchOpen(false);
-                }}
-                className="inline-block w-full text-sm px-4 py-2 rounded-full border border-red-500 hover:bg-red-600 transition-colors text-center"
+                onClick={closeAll}
+                className="inline-flex w-full justify-center text-sm px-4 py-2 rounded-full bg-red-600 hover:bg-red-500 transition"
               >
                 Sign In
               </Link>
             ) : (
               <>
-                {/* Profile row (tap to toggle) */}
                 <button
                   type="button"
                   onClick={() => setMobileProfileOpen((prev) => !prev)}
-                  className="w-full flex items-center justify-between gap-3"
+                  className="w-full flex items-center justify-between gap-3 px-2 py-2 rounded-xl hover:bg-white/5 transition"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-red-700 flex items-center justify-center text-xs font-semibold">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-red-600/80 flex items-center justify-center text-xs font-semibold ring-1 ring-white/10">
                       {user.image ? (
-                        <Image
-                          src={user.image}
-                          alt={user.username}
-                          width={36}
-                          height={36}
-                        />
+                        <Image src={user.image} alt={user.username} width={40} height={40} />
                       ) : (
-                        <span>
-                          {user.username?.charAt(0).toUpperCase() ?? "U"}
-                        </span>
+                        <span>{user.username?.charAt(0).toUpperCase() ?? "U"}</span>
                       )}
                     </div>
-                    <span className="text-sm">{user.username}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm text-white truncate">{user.username}</p>
+                      <p className="text-xs text-zinc-400 truncate">{user.email}</p>
+                    </div>
                   </div>
-                  <span className="text-lg">
-                    {mobileProfileOpen ? "▴" : "▾"}
-                  </span>
+                  <span className="text-lg text-zinc-300">{mobileProfileOpen ? "▴" : "▾"}</span>
                 </button>
 
                 {mobileProfileOpen && (
-                  <div className="mt-3 flex flex-col gap-2 text-sm">
+                  <div className="mt-2 flex flex-col gap-1 text-sm">
                     <button
                       type="button"
-                      className="text-left px-0 py-1 hover:text-red-300"
+                      className="text-left px-3 py-2 rounded-xl hover:bg-white/5 text-zinc-200"
                       onClick={() => {
-                        setSidebarOpen(false);
-                        setMobileProfileOpen(false);
-                        setSearchOpen(false);
+                        closeAll();
                         router.push("/dashboard");
                       }}
                     >
                       Dashboard
                     </button>
-
                     <button
                       type="button"
-                      className="text-left px-0 py-1 hover:text-red-300"
+                      className="text-left px-3 py-2 rounded-xl hover:bg-white/5 text-zinc-200"
                       onClick={() => {
-                        setSidebarOpen(false);
-                        setMobileProfileOpen(false);
-                        setSearchOpen(false);
+                        closeAll();
                         router.push("/favorites");
                       }}
                     >
                       Favorites
                     </button>
-
                     <button
                       type="button"
-                      className="text-left px-0 py-1 hover:text-red-300"
+                      className="text-left px-3 py-2 rounded-xl hover:bg-white/5 text-zinc-200"
                       onClick={() => {
-                        setSidebarOpen(false);
-                        setMobileProfileOpen(false);
-                        setSearchOpen(false);
+                        closeAll();
                         router.push("/settings");
                       }}
                     >
                       Settings
                     </button>
 
-                    {/* ✅ Admin Panel (MOBILE) */}
                     {user?.isAdmin && (
                       <button
                         type="button"
-                        className="text-left px-0 py-1 hover:text-red-300"
+                        className="text-left px-3 py-2 rounded-xl hover:bg-white/5 text-zinc-200"
                         onClick={() => {
-                          setSidebarOpen(false);
-                          setMobileProfileOpen(false);
-                          setSearchOpen(false);
+                          closeAll();
                           router.push("/admin");
                         }}
                       >
@@ -484,13 +441,8 @@ const NavBar = () => {
 
                     <button
                       type="button"
-                      className="text-left px-0 py-1 text-red-300 hover:text-red-400"
-                      onClick={async () => {
-                        await handleLogout();
-                        setSidebarOpen(false);
-                        setMobileProfileOpen(false);
-                        setSearchOpen(false);
-                      }}
+                      className="text-left px-3 py-2 rounded-xl hover:bg-white/5 text-red-300"
+                      onClick={handleLogout}
                     >
                       Log out
                     </button>
@@ -501,6 +453,9 @@ const NavBar = () => {
           </div>
         </div>
       </div>
+
+      {/* Spacer so content doesn't hide under fixed nav */}
+      <div className="h-16" />
     </>
   );
 };
