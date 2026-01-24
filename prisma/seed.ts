@@ -1,11 +1,172 @@
-// prisma/seed.ts
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-async function main() {
+type SeedAnime = {
+  title: string;
+  summary: string;
+  creator: string;
+  ep_count: number;
+  season: number;
+  image: string;
+  genre: string;
 
-  const animeList = [
+  // optional in your current seed data but required in schema
+  format?: string;
+  eps_dur?: string;
+  studios?: string;
+  producers?: string;
+};
+
+function defaultIfEmpty(value: string | undefined | null, fallback: string) {
+  const v = (value ?? "").trim();
+  return v.length ? v : fallback;
+}
+
+function safeName(input: string) {
+  return input.replace(/\s+/g, " ").trim();
+}
+
+async function upsertStaffByName(name: string, image?: string) {
+  const staffName = safeName(name);
+
+  return prisma.staff.upsert({
+    where: { name: staffName },
+    update: {
+      image: image ?? undefined,
+    },
+    create: {
+      name: staffName,
+      image: image ?? undefined,
+    },
+  });
+}
+
+async function upsertAnimeStaffCredit(args: {
+  animeId: string;
+  staffId: string;
+  role: string;
+  roleGroup?: string;
+  isMain?: boolean;
+  sortOrder?: number;
+}) {
+  return prisma.animeStaff.upsert({
+    where: {
+      animeId_staffId_role: {
+        animeId: args.animeId,
+        staffId: args.staffId,
+        role: args.role,
+      },
+    },
+    update: {
+      roleGroup: args.roleGroup ?? null,
+      isMain: args.isMain ?? false,
+      sortOrder: args.sortOrder ?? null,
+    },
+    create: {
+      animeId: args.animeId,
+      staffId: args.staffId,
+      role: args.role,
+      roleGroup: args.roleGroup ?? null,
+      isMain: args.isMain ?? false,
+      sortOrder: args.sortOrder ?? null,
+    },
+  });
+}
+
+async function seedAnimeStaffForAllAnime(
+  records: Array<{
+    id: string;
+    title: string;
+    creator: string | null;
+    studios: string | null;
+    producers: string | null;
+  }>
+) {
+
+  for (const anime of records) {
+    const creator = defaultIfEmpty(anime.creator, "Unknown Creator");
+    const studio = defaultIfEmpty(anime.studios, "Unknown Studio");
+    const producer = defaultIfEmpty(anime.producers, "Unknown Producer");
+
+    const director = await upsertStaffByName(`${anime.title} — Director`);
+    const seriesComp = await upsertStaffByName(`${anime.title} — Series Composition`);
+    const charDesign = await upsertStaffByName(`${anime.title} — Character Design`);
+    const music = await upsertStaffByName(`${anime.title} — Music`);
+
+    // Use real-ish fields as staff too (still fits AniList “Staff” model)
+    const creatorStaff = await upsertStaffByName(creator);
+    const studioStaff = await upsertStaffByName(studio);
+    const producerStaff = await upsertStaffByName(producer);
+
+    // Upsert credits (AniList staff page style)
+    await upsertAnimeStaffCredit({
+      animeId: anime.id,
+      staffId: director.id,
+      role: "Director",
+      roleGroup: "Directing",
+      isMain: true,
+      sortOrder: 1,
+    });
+
+    await upsertAnimeStaffCredit({
+      animeId: anime.id,
+      staffId: seriesComp.id,
+      role: "Series Composition",
+      roleGroup: "Writing",
+      isMain: true,
+      sortOrder: 2,
+    });
+
+    await upsertAnimeStaffCredit({
+      animeId: anime.id,
+      staffId: charDesign.id,
+      role: "Character Design",
+      roleGroup: "Art",
+      isMain: false,
+      sortOrder: 10,
+    });
+
+    await upsertAnimeStaffCredit({
+      animeId: anime.id,
+      staffId: music.id,
+      role: "Music",
+      roleGroup: "Sound",
+      isMain: false,
+      sortOrder: 11,
+    });
+
+    await upsertAnimeStaffCredit({
+      animeId: anime.id,
+      staffId: creatorStaff.id,
+      role: "Original Creator",
+      roleGroup: "Writing",
+      isMain: false,
+      sortOrder: 12,
+    });
+
+    await upsertAnimeStaffCredit({
+      animeId: anime.id,
+      staffId: studioStaff.id,
+      role: "Studio",
+      roleGroup: "Production",
+      isMain: false,
+      sortOrder: 20,
+    });
+
+    await upsertAnimeStaffCredit({
+      animeId: anime.id,
+      staffId: producerStaff.id,
+      role: "Producer",
+      roleGroup: "Production",
+      isMain: false,
+      sortOrder: 21,
+    });
+  }
+}
+
+async function main() {
+  const animeList: SeedAnime[] = [
     {
       title: "Bleach: Thousand-Year Blood War",
       summary:
@@ -15,6 +176,10 @@ async function main() {
       season: 3,
       image: "/assets/Anime/bleach_v2.png",
       genre: "Action, Shounen, Supernatural",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "Pierrot",
+      producers: "Aniplex",
     },
     {
       title: "Jujutsu Kaisen",
@@ -25,6 +190,10 @@ async function main() {
       season: 3,
       image: "/assets/Anime/jjk_v2.png",
       genre: "Action, Dark Fantasy, Supernatural",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "MAPPA",
+      producers: "TOHO animation",
     },
     {
       title: "Demon Slayer",
@@ -35,8 +204,11 @@ async function main() {
       season: 4,
       image: "/assets/Anime/demon_slayer_v2.png",
       genre: "Action, Historical, Supernatural",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "ufotable",
+      producers: "Aniplex",
     },
-
     {
       title: "Naruto Shippuden",
       summary:
@@ -46,8 +218,11 @@ async function main() {
       season: 21,
       image: "/assets/Anime/naruto.png",
       genre: "Action, Adventure, Comedy",
+      format: "TV",
+      eps_dur: "23m",
+      studios: "Pierrot",
+      producers: "TV Tokyo",
     },
-
     {
       title: "Solo Leveling",
       summary:
@@ -57,8 +232,11 @@ async function main() {
       season: 2,
       image: "/assets/Anime/solo_leveling.png",
       genre: "Action, Fantasy, Game",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "A-1 Pictures",
+      producers: "Aniplex",
     },
-
     {
       title: "My Hero Academia",
       summary:
@@ -68,8 +246,11 @@ async function main() {
       season: 8,
       image: "/assets/Anime/my_hero_academia.png",
       genre: "Action, Superhero, Shounen",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "Bones",
+      producers: "TOHO animation",
     },
-
     {
       title: "Attack on Titan",
       summary:
@@ -79,8 +260,11 @@ async function main() {
       season: 4,
       image: "/assets/Anime/aot.png",
       genre: "Dark Fantasy, Action, Drama",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "WIT Studio / MAPPA",
+      producers: "Kodansha",
     },
-
     {
       title: "One Piece",
       summary:
@@ -90,8 +274,11 @@ async function main() {
       season: 21,
       image: "/assets/Anime/one_piece.png",
       genre: "Action, Adventure, Comedy",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "Toei Animation",
+      producers: "Fuji TV",
     },
-
     {
       title: "Fullmetal Alchemist: Brotherhood",
       summary:
@@ -101,8 +288,11 @@ async function main() {
       season: 1,
       image: "/assets/Anime/fmab.png",
       genre: "Action, Adventure, Fantasy",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "Bones",
+      producers: "Aniplex",
     },
-
     {
       title: "Hunter x Hunter (2011)",
       summary:
@@ -112,8 +302,11 @@ async function main() {
       season: 7,
       image: "/assets/Anime/hxh.png",
       genre: "Action, Adventure, Fantasy",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "Madhouse",
+      producers: "VAP",
     },
-
     {
       title: "Chainsaw Man",
       summary:
@@ -123,8 +316,11 @@ async function main() {
       season: 1,
       image: "/assets/Anime/chainsaw_man.png",
       genre: "Action, Dark Fantasy, Supernatural",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "MAPPA",
+      producers: "Shueisha",
     },
-
     {
       title: "Spy x Family",
       summary:
@@ -134,8 +330,11 @@ async function main() {
       season: 2,
       image: "/assets/Anime/spy_x_family.png",
       genre: "Comedy, Action, Slice of Life",
+      format: "TV",
+      eps_dur: "24m",
+      studios: "WIT Studio / CloverWorks",
+      producers: "Shueisha",
     },
-
     {
       title: "Death Note",
       summary:
@@ -145,15 +344,30 @@ async function main() {
       season: 1,
       image: "/assets/Anime/death_note.png",
       genre: "Thriller, Mystery, Supernatural",
+      format: "TV",
+      eps_dur: "23m",
+      studios: "Madhouse",
+      producers: "VAP",
     },
   ];
 
-  // Upsert anime and keep a lookup map by title
   const animeMap: Record<string, { id: string }> = {};
+  const createdAnimeRecords: Array<{
+    id: string;
+    title: string;
+    creator: string | null;
+    studios: string | null;
+    producers: string | null;
+  }> = [];
+
+  function defaultIfEmpty(value: string | undefined | null, fallback: string) {
+    const v = (value ?? "").trim();
+    return v.length ? v : fallback;
+  }
 
   for (const anime of animeList) {
     const record = await prisma.anime.upsert({
-      where: { title: anime.title }, // title should be @unique
+      where: { title: anime.title },
       update: {
         summary: anime.summary,
         creator: anime.creator,
@@ -161,14 +375,39 @@ async function main() {
         season: anime.season,
         image: anime.image,
         genre: anime.genre,
+        format: defaultIfEmpty(anime.format, "TV"),
+        eps_dur: defaultIfEmpty(anime.eps_dur, "24m"),
+        studios: defaultIfEmpty(anime.studios, "Unknown Studio"),
+        producers: defaultIfEmpty(anime.producers, "Unknown Producer"),
       },
-      create: anime,
+      create: {
+        title: anime.title,
+        summary: anime.summary,
+        creator: anime.creator,
+        ep_count: anime.ep_count,
+        season: anime.season,
+        image: anime.image,
+        genre: anime.genre,
+        format: defaultIfEmpty(anime.format, "TV"),
+        eps_dur: defaultIfEmpty(anime.eps_dur, "24m"),
+        studios: defaultIfEmpty(anime.studios, "Unknown Studio"),
+        producers: defaultIfEmpty(anime.producers, "Unknown Producer"),
+      },
+      select: {
+        id: true,
+        title: true,
+        creator: true,
+        studios: true,
+        producers: true,
+      },
     });
 
     animeMap[record.title] = { id: record.id };
+    createdAnimeRecords.push(record);
   }
 
   const characterList = [
+    // Naruto Shippuden Characters
     {
       name: "Naruto Uzumaki",
       image: "/assets/Characters/naruto.png",
@@ -189,6 +428,50 @@ async function main() {
       abilities: "Sharingan, Mangekyo Sharingan, Chidori, Amaterasu",
       strength: "Genius-level talent, deadly speed and precision.",
       weakness: "Isolates himself, consumed by vengeance.",
+      animeTitle: "Naruto Shippuden",
+    },
+    {
+      name: "Sakura Haruno",
+      image: "/assets/Characters/sakura.png",
+      role: "Medical Ninja / Tsunade's Disciple",
+      desc: "A chakra-control prodigy who becomes one of the strongest medical ninjas in history.",
+      stats: 92,
+      abilities: "Medical Ninjutsu, Chakra-Enhanced Strength, Hundred Healings",
+      strength: "Perfect chakra control, physical power, battlefield healing.",
+      weakness: "Emotionally tied to teammates.",
+      animeTitle: "Naruto Shippuden",
+    },
+    {
+      name: "Jiraiya",
+      image: "/assets/Characters/jiraiya.png",
+      role: "Legendary Sannin / Toad Sage",
+      desc: "A wandering sage whose legacy shapes the future of the ninja world.",
+      stats: 95,
+      abilities: "Sage Mode, Toad Summoning, Rasengan",
+      strength: "Wisdom, versatility, powerful ninjutsu.",
+      weakness: "Reckless tendencies.",
+      animeTitle: "Naruto Shippuden",
+    },
+    {
+      name: "Tsunade",
+      image: "/assets/Characters/tsunade.png",
+      role: "Fifth Hokage",
+      desc: "A legendary medical ninja with monstrous strength.",
+      stats: 93,
+      abilities: "Medical Ninjutsu, Super Strength, Creation Rebirth",
+      strength: "Healing mastery, leadership.",
+      weakness: "Emotional trauma, gambling addiction.",
+      animeTitle: "Naruto Shippuden",
+    },
+    {
+      name: "Hinata Hyuga",
+      image: "/assets/Characters/hinata.png",
+      role: "Hyuga Heiress",
+      desc: "A gentle but determined kunoichi who finds her strength.",
+      stats: 85,
+      abilities: "Byakugan, Gentle Fist",
+      strength: "Perception, chakra control.",
+      weakness: "Low confidence early on.",
       animeTitle: "Naruto Shippuden",
     },
     {
@@ -213,6 +496,7 @@ async function main() {
       weakness: "Chronic illness, carries heavy emotional burden.",
       animeTitle: "Naruto Shippuden",
     },
+    // Jujutsu Kaiesen Characters
     {
       name: "Satoru Gojo",
       image: "/assets/Characters/gojo.png",
@@ -236,6 +520,108 @@ async function main() {
       animeTitle: "Jujutsu Kaisen",
     },
     {
+      name: "Yuji Itadori",
+      image: "/assets/Characters/yuji.png",
+      role: "Jujutsu Sorcerer / Sukuna's Vessel",
+      desc: "A compassionate teenager thrust into the jujutsu world after becoming the host of Ryomen Sukuna.",
+      stats: 92,
+      abilities: "Enhanced strength, Divergent Fist, Black Flash, Sukuna possession",
+      strength: "Physical durability, empathy, unbreakable resolve.",
+      weakness: "Lacks refined cursed techniques, emotionally vulnerable.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    {
+      name: "Nobara Kugisaki",
+      image: "/assets/Characters/nobara.png",
+      role: "Jujutsu Sorcerer",
+      desc: "A fierce and unapologetic sorcerer who fights using cursed tools and precision.",
+      stats: 88,
+      abilities: "Straw Doll Technique, Resonance, Hairpin",
+      strength: "Mental toughness, precision attacks.",
+      weakness: "Close-range vulnerability.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    {
+      name: "Kento Nanami",
+      image: "/assets/Characters/nanami.png",
+      role: "Grade 1 Jujutsu Sorcerer",
+      desc: "A former salaryman who values efficiency and responsibility above heroics.",
+      stats: 93,
+      abilities: "Ratio Technique, Black Flash",
+      strength: "Discipline, battle composure.",
+      weakness: "Burnout, emotional repression.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    {
+      name: "Maki Zenin",
+      image: "/assets/Characters/maki.png",
+      role: "Jujutsu Sorcerer / Zenin Clan Outcast",
+      desc: "A weapon master born without cursed energy who defies sorcerer norms.",
+      stats: 94,
+      abilities: "Heavenly Restriction, cursed weapon mastery",
+      strength: "Physical power, relentless will.",
+      weakness: "Clan persecution.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    // Curses Villains
+    {
+      name: "Ryomen Sukuna",
+      image: "/assets/Characters/sukuna.png",
+      role: "King of Curses",
+      desc: "An ancient and sadistic curse whose power terrifies even elite sorcerers.",
+      stats: 100,
+      abilities: "Dismantle, Cleave, Domain Expansion (Malevolent Shrine)",
+      strength: "Godlike cursed energy, battle dominance.",
+      weakness: "Arrogance, relies on vessels.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    {
+      name: "Suguru Geto",
+      image: "/assets/Characters/geto.png",
+      role: "Curse User / Ideologue",
+      desc: "A former sorcerer whose twisted beliefs lead him to oppose humanity.",
+      stats: 95,
+      abilities: "Cursed Spirit Manipulation",
+      strength: "Large-scale curse control.",
+      weakness: "Ideological obsession.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    {
+      name: "Mahito",
+      image: "/assets/Characters/mahito.png",
+      role: "Special Grade Curse",
+      desc: "A cruel curse fascinated by the shape and fragility of the human soul.",
+      stats: 94,
+      abilities: "Idle Transfiguration, Domain Expansion (Self-Embodiment of Perfection)",
+      strength: "Soul manipulation, adaptability.",
+      weakness: "Overconfidence.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    {
+      name: "Toji Fushiguro",
+      image: "/assets/Characters/toji.png",
+      role: "Sorcerer Killer",
+      desc: "A legendary assassin with no cursed energy who hunts sorcerers.",
+      stats: 96,
+      abilities: "Heavenly Restriction, cursed weapon mastery",
+      strength: "Extreme speed, combat instincts.",
+      weakness: "Lack of cursed techniques.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+    {
+      name: "Choso",
+      image: "/assets/Characters/choso.png",
+      role: "Death Painting Womb",
+      desc: "A cursed-human hybrid driven by loyalty to his brothers.",
+      stats: 92,
+      abilities: "Blood Manipulation, Piercing Blood",
+      strength: "Endurance, battlefield control.",
+      weakness: "Emotional attachments.",
+      animeTitle: "Jujutsu Kaisen",
+    },
+
+
+    {
       name: "Tanjiro Kamado",
       image: "/assets/Characters/tanjiro.png",
       role: "Demon Slayer",
@@ -244,6 +630,28 @@ async function main() {
       abilities: "Water Breathing, Sun Breathing, enhanced smell",
       strength: "Empathy, strong resolve, quick learner.",
       weakness: "Pushes himself past his limits, gets injured often.",
+      animeTitle: "Demon Slayer",
+    },
+    {
+      name: "Nezuko Kamado",
+      image: "/assets/Characters/nezuko.png",
+      role: "Demon / Tanjiro’s Sister",
+      desc: "A demon who retains her humanity and fights to protect others.",
+      stats: 91,
+      abilities: "Blood Demon Art, explosive blood, demon regeneration",
+      strength: "Raw power, resilience, emotional bond with Tanjiro.",
+      weakness: "Limited speech, sunlight vulnerability (early).",
+      animeTitle: "Demon Slayer",
+    },
+    {
+      name: "Inosuke Hashibira",
+      image: "/assets/Characters/inosuke.png",
+      role: "Demon Slayer",
+      desc: "A feral and aggressive fighter raised in the mountains.",
+      stats: 90,
+      abilities: "Beast Breathing, flexible body",
+      strength: "Instinctual combat, pain tolerance.",
+      weakness: "Reckless behavior.",
       animeTitle: "Demon Slayer",
     },
     {
@@ -258,6 +666,62 @@ async function main() {
       animeTitle: "Demon Slayer",
     },
     {
+      name: "Giyu Tomioka",
+      image: "/assets/Characters/giyu.png",
+      role: "Water Hashira",
+      desc: "A stoic swordsman who introduces Tanjiro to the Demon Slayer Corps.",
+      stats: 94,
+      abilities: "Water Breathing, Dead Calm",
+      strength: "Precision, calm decision-making.",
+      weakness: "Emotional isolation.",
+      animeTitle: "Demon Slayer",
+    },
+    {
+      name: "Tengen Uzui",
+      image: "/assets/Characters/tengen.png",
+      role: "Sound Hashira",
+      desc: "A flamboyant ninja turned Demon Slayer who values flash and flair.",
+      stats: 93,
+      abilities: "Sound Breathing, explosive techniques",
+      strength: "Speed, battlefield awareness.",
+      weakness: "Poison vulnerability.",
+      animeTitle: "Demon Slayer",
+    },
+    {
+      name: "Akaza",
+      image: "/assets/Characters/akaza.png",
+      role: "Upper Rank Three",
+      desc: "A battle-hungry demon who respects strength above all else.",
+      stats: 97,
+      abilities: "Destructive Death, Compass Needle",
+      strength: "Martial mastery, relentless combat.",
+      weakness: "Emotional trauma.",
+      animeTitle: "Demon Slayer",
+    },
+    {
+      name: "Kokushibo",
+      image: "/assets/Characters/kokushibo.png",
+      role: "Upper Rank One",
+      desc: "The strongest of the Twelve Kizuki and a former Demon Slayer whose obsession with power consumed him.",
+      stats: 99,
+      abilities: "Moon Breathing, Blood Demon Art, enhanced regeneration, transparent world",
+      strength: "Unmatched swordsmanship, battle experience, overwhelming presence.",
+      weakness: "Inner conflict, fractured identity, attachment to his past.",
+      animeTitle: "Demon Slayer",
+    },
+    {
+      name: "Doma",
+      image: "/assets/Characters/doma.png",
+      role: "Upper Rank Two",
+      desc: "A charismatic and cruel demon who hides his complete lack of empathy behind a friendly facade.",
+      stats: 98,
+      abilities: "Ice Blood Demon Art, cryokinesis, absorption",
+      strength: "Wide-area control, emotional manipulation, rapid regeneration.",
+      weakness: "Arrogance, emotional emptiness, underestimates opponents.",
+      animeTitle: "Demon Slayer",
+    },
+    // My Hero Acadamia
+    {
       name: "Izuku Midoriya",
       image: "/assets/Characters/izuku.png",
       role: "Hero Student",
@@ -269,71 +733,1135 @@ async function main() {
       animeTitle: "My Hero Academia",
     },
     {
+      name: "Katsuki Bakugo",
+      image: "/assets/Characters/bakugo.png",
+      role: "Hero Student",
+      desc: "An explosive prodigy driven by pride and relentless ambition.",
+      stats: 93,
+      abilities: "Explosion, advanced combat mobility",
+      strength: "Raw power, battle instincts.",
+      weakness: "Short temper, emotional rigidity.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "Shoto Todoroki",
+      image: "/assets/Characters/todoroki.png",
+      role: "Hero Student",
+      desc: "A gifted student wielding both fire and ice.",
+      stats: 92,
+      abilities: "Half-Cold Half-Hot, advanced elemental control",
+      strength: "Versatility, battlefield control.",
+      weakness: "Emotional trauma, internal conflict.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "Ochaco Uraraka",
+      image: "/assets/Characters/uraraka.png",
+      role: "Hero Student",
+      desc: "A determined student who fights to support her family.",
+      stats: 88,
+      abilities: "Zero Gravity, martial arts",
+      strength: "Mobility, creativity.",
+      weakness: "Motion sickness.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "Mirio Togata",
+      image: "/assets/Characters/mirio.png",
+      role: "Pro Hero / Big Three",
+      desc: "A cheerful hero whose mastery of Permeation makes him nearly unstoppable.",
+      stats: 95,
+      abilities: "Permeation, elite combat skills",
+      strength: "Combat IQ, perseverance.",
+      weakness: "Quirk complexity.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "All Might",
+      image: "/assets/Characters/all_might.png",
+      role: "Symbol of Peace / Former No.1 Hero",
+      desc: "The legendary hero who upheld peace and passed his power to Midoriya.",
+      stats: 98,
+      abilities: "One For All, superhuman strength, speed",
+      strength: "Inspiration, overwhelming power.",
+      weakness: "Severely injured body, time limit.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "Endeavor",
+      image: "/assets/Characters/endeavor.png",
+      role: "No.1 Pro Hero",
+      desc: "A ruthless hero obsessed with surpassing All Might.",
+      stats: 96,
+      abilities: "Hellflame, high-temperature combat",
+      strength: "Raw power, determination.",
+      weakness: "Emotional damage, strained family ties.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "Aizawa",
+      image: "/assets/Characters/aizawa.png",
+      role: "UA Teacher / Pro Hero Eraser Head",
+      desc: "A strict but caring teacher who nullifies Quirks.",
+      stats: 91,
+      abilities: "Erasure, capture weapon mastery",
+      strength: "Tactical awareness, support utility.",
+      weakness: "Physical strain, dry eyes.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "Tomura Shigaraki",
+      image: "/assets/Characters/tomura.png",
+      role: "League of Villains Leader",
+      desc: "A destructive villain shaped by trauma and manipulation.",
+      stats: 97,
+      abilities: "Decay, enhanced regeneration, All For One",
+      strength: "Mass destruction, evolving power.",
+      weakness: "Mental instability.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "All For One",
+      image: "/assets/Characters/all_for_one.png",
+      role: "Ultimate Villain",
+      desc: "A mastermind who steals and distributes Quirks.",
+      stats: 99,
+      abilities: "Quirk theft, enhanced strength, longevity",
+      strength: "Strategic genius, overwhelming power.",
+      weakness: "Arrogance, reliance on successors.",
+      animeTitle: "My Hero Academia",
+    },
+    {
+      name: "Dabi",
+      image: "/assets/Characters/dabi.png",
+      role: "League of Villains / Todoroki Family",
+      desc: "A sadistic villain wielding unstable blue flames.",
+      stats: 95,
+      abilities: "Blueflame, high-output combustion",
+      strength: "Destructive firepower.",
+      weakness: "Self-destructive quirk.",
+      animeTitle: "My Hero Academia",
+    },
+    // Attack on Titan
+    {
+      name: "Eren Yeager",
+      image: "/assets/Characters/eren.png",
+      role: "Attack Titan / Founding Titan",
+      desc: "A determined boy whose desire for freedom drives him to reshape the world.",
+      stats: 97,
+      abilities: "Attack Titan, Founding Titan, War Hammer Titan, future memories",
+      strength: "Unbreakable will, combat adaptability, strategic evolution.",
+      weakness: "Obsessive ideology, emotional isolation.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Mikasa Ackerman",
+      image: "/assets/Characters/mikasa.png",
+      role: "Elite Soldier / Ackerman",
+      desc: "A genetically gifted warrior devoted to protecting Eren.",
+      stats: 96,
+      abilities: "ODM mastery, Ackerman combat instincts",
+      strength: "Speed, precision, loyalty.",
+      weakness: "Emotional attachment.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Armin Arlert",
+      image: "/assets/Characters/armin.png",
+      role: "Colossal Titan / Strategist",
+      desc: "A brilliant tactician whose mind proves as powerful as any titan.",
+      stats: 93,
+      abilities: "Colossal Titan, battlefield strategy",
+      strength: "Intelligence, moral reasoning.",
+      weakness: "Self-doubt.",
+      animeTitle: "Attack on Titan",
+    },
+    {
       name: "Levi Ackerman",
       image: "/assets/Characters/levi.png",
-      role: "Squad Captain",
-      desc: "Humanity’s strongest soldier, cold, precise, and terrifyingly efficient with ODM gear.",
+      role: "Captain / Humanity’s Strongest Soldier",
+      desc: "A relentless and precise captain feared by both titans and humans.",
       stats: 98,
-      abilities: "ODM gear mastery, extreme speed and precision",
-      strength: "Unmatched skill against titans, elite combat instincts.",
-      weakness: "Emotionally guarded, carries heavy trauma.",
+      abilities: "ODM mastery, Ackerman reflexes",
+      strength: "Combat efficiency, discipline.",
+      weakness: "Physical exhaustion, trauma.",
       animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Erwin Smith",
+      image: "/assets/Characters/erwin.png",
+      role: "Commander / Survey Corps",
+      desc: "A visionary leader willing to sacrifice everything for truth.",
+      stats: 95,
+      abilities: "Strategic command, battlefield leadership",
+      strength: "Charisma, resolve.",
+      weakness: "Self-destructive ambition.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Hange Zoe",
+      image: "/assets/Characters/hange.png",
+      role: "Commander / Titan Researcher",
+      desc: "An eccentric scientist driven by curiosity and responsibility.",
+      stats: 90,
+      abilities: "Titan research, adaptive leadership",
+      strength: "Creativity, analytical thinking.",
+      weakness: "Overzealous curiosity.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Reiner Braun",
+      image: "/assets/Characters/reiner.png",
+      role: "Armored Titan / Warrior",
+      desc: "A tragic soldier torn between duty and guilt.",
+      stats: 94,
+      abilities: "Armored Titan, endurance combat",
+      strength: "Durability, battlefield experience.",
+      weakness: "Severe psychological trauma.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Bertholdt Hoover",
+      image: "/assets/Characters/bertholdt.png",
+      role: "Colossal Titan",
+      desc: "A quiet warrior burdened by his destructive power.",
+      stats: 92,
+      abilities: "Colossal Titan, massive explosion",
+      strength: "Raw destructive capability.",
+      weakness: "Indecisiveness.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Annie Leonhart",
+      image: "/assets/Characters/annie.png",
+      role: "Female Titan / Warrior",
+      desc: "A skilled fighter hiding deadly secrets.",
+      stats: 93,
+      abilities: "Female Titan, martial arts mastery",
+      strength: "Precision, combat skill.",
+      weakness: "Emotional detachment.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Zeke Yeager",
+      image: "/assets/Characters/zeke.png",
+      role: "Beast Titan / Marley Commander",
+      desc: "A calculating antagonist driven by twisted compassion.",
+      stats: 96,
+      abilities: "Beast Titan, spinal fluid control",
+      strength: "Strategic planning, ranged combat.",
+      weakness: "Ideological extremism.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Historia Reiss",
+      image: "/assets/Characters/historia.png",
+      role: "Queen of the Walls",
+      desc: "A reluctant ruler who grows into her responsibility.",
+      stats: 85,
+      abilities: "Political authority, royal lineage",
+      strength: "Moral courage.",
+      weakness: "Inexperience.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Gabi Braun",
+      image: "/assets/Characters/gabi.png",
+      role: "Warrior Candidate",
+      desc: "A fiercely loyal soldier shaped by propaganda and war.",
+      stats: 89,
+      abilities: "Marksmanship, combat instincts",
+      strength: "Adaptability, determination.",
+      weakness: "Impulsiveness.",
+      animeTitle: "Attack on Titan",
+    },
+    {
+      name: "Falco Grice",
+      image: "/assets/Characters/falco.png",
+      role: "Warrior Candidate / Jaw Titan",
+      desc: "A compassionate soldier who becomes a titan shifter.",
+      stats: 88,
+      abilities: "Jaw Titan, aerial combat",
+      strength: "Empathy, adaptability.",
+      weakness: "Inexperience.",
+      animeTitle: "Attack on Titan",
+    },
+    // Bleach Characters 
+    {
+      name: "Ichigo Kurosaki",
+      image: "/assets/Characters/ichigo.png",
+      role: "Substitute Soul Reaper / Quincy-Hybrid",
+      desc: "A human with the powers of a Soul Reaper, Hollow, and Quincy who stands at the center of the war.",
+      stats: 98,
+      abilities: "Zangetsu, Bankai, Hollowfication, Quincy abilities",
+      strength: "Hybrid power, adaptability, overwhelming resolve.",
+      weakness: "Emotional burden, reckless self-sacrifice.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Orihime Inoue",
+      image: "/assets/Characters/orihime.png",
+      role: "Healer / Human with Fullbring",
+      desc: "A gentle but powerful ally whose abilities can reject reality itself.",
+      stats: 90,
+      abilities: "Shun Shun Rikka, reality rejection, advanced healing",
+      strength: "Defensive power, compassion, resilience.",
+      weakness: "Self-doubt, reluctance to fight.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Yasutora Sado",
+      image: "/assets/Characters/chad.png",
+      role: "Fullbringer / Brawler",
+      desc: "A loyal and stoic fighter whose strength protects those he cares about.",
+      stats: 92,
+      abilities: "Brazo Derecha del Gigante, Brazo Izquierda del Diablo",
+      strength: "Physical power, unwavering loyalty.",
+      weakness: "Limited ranged capability.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
     },
 
     {
       name: "Rukia Kuchiki",
       image: "/assets/Characters/rukia.png",
       role: "Soul Reaper / Noble of the Kuchiki Clan",
-      desc: "A disciplined Soul Reaper whose choices pull Ichigo into the spirit world and shape his path.",
-      stats: 90,
-      abilities: "Zanpakutō (Sode no Shirayuki), Kido, Hakuda",
-      strength: "Composed under pressure, strong technique and control.",
-      weakness: "Can be emotionally distant, carries guilt alone.",
+      desc: "A disciplined Soul Reaper whose growth culminates in mastering her icy Zanpakutō.",
+      stats: 92,
+      abilities: "Sode no Shirayuki, Bankai: Hakka no Togame",
+      strength: "Precision, composure under pressure.",
+      weakness: "Can be emotionally reserved.",
       animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Renji Abarai",
+      image: "/assets/Characters/renji.png",
+      role: "Lieutenant / Soul Reaper",
+      desc: "A fierce warrior who unlocks the true name of his Zanpakutō.",
+      stats: 93,
+      abilities: "Zabimaru, Bankai: Sōō Zabimaru",
+      strength: "Raw power, loyalty.",
+      weakness: "Hot-headed nature.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Byakuya Kuchiki",
+      image: "/assets/Characters/byakuya.png",
+      role: "Captain of Squad 6",
+      desc: "A proud noble captain who redefines his ideals through defeat and rebirth.",
+      stats: 95,
+      abilities: "Senbonzakura, Bankai mastery",
+      strength: "Elegance, tactical control.",
+      weakness: "Rigid adherence to duty.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Sōsuke Aizen",
+      image: "/assets/Characters/aizen.png",
+      role: "Former Captain / Mastermind",
+      desc: "A genius manipulator whose intellect and power rival gods, imprisoned yet pivotal in the Quincy war.",
+      stats: 100,
+      abilities: "Kyōka Suigetsu, Hōgyoku-enhanced immortality, advanced kido",
+      strength: "Perfect hypnosis, strategic brilliance, overwhelming reiatsu.",
+      weakness: "Arrogance, god complex.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Gin Ichimaru",
+      image: "/assets/Characters/gin.png",
+      role: "Former Captain / Assassin",
+      desc: "A deceptive and soft-spoken killer whose loyalty hides a final act of rebellion.",
+      stats: 95,
+      abilities: "Shinsō, Kamishini no Yari",
+      strength: "Deadly precision, emotional restraint.",
+      weakness: "Self-destructive devotion.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Kaname Tōsen",
+      image: "/assets/Characters/tosen.png",
+      role: "Former Captain / Justice Seeker",
+      desc: "A blind warrior who pursued justice at the cost of his humanity.",
+      stats: 93,
+      abilities: "Suzumushi, Bankai: Enma Kōrogi",
+      strength: "Conviction, sensory combat.",
+      weakness: "Rigid worldview.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+
+    {
+      name: "Toshiro Hitsugaya",
+      image: "/assets/Characters/toshiro.png",
+      role: "Captain of Squad 10",
+      desc: "A prodigy captain wielding the strongest ice-type Zanpakutō.",
+      stats: 94,
+      abilities: "Hyōrinmaru, Mature Bankai form",
+      strength: "Elemental control, growth potential.",
+      weakness: "Limited stamina when overextended.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Kenpachi Zaraki",
+      image: "/assets/Characters/kenpachi.png",
+      role: "Captain of Squad 11",
+      desc: "A battle-obsessed captain who lives solely for combat.",
+      stats: 99,
+      abilities: "Nozarashi, Shikai and Bankai",
+      strength: "Overwhelming raw power.",
+      weakness: "Lack of restraint.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Yamamoto Genryusai",
+      image: "/assets/Characters/yamamoto.png",
+      role: "Captain-Commander",
+      desc: "The legendary founder of the Gotei 13 and master of flame.",
+      stats: 100,
+      abilities: "Ryūjin Jakka, Bankai: Zanka no Tachi",
+      strength: "Unmatched destructive power.",
+      weakness: "Rigid pride, age.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Urahara Kisuke",
+      image: "/assets/Characters/urahara.png",
+      role: "Former Captain / Scientist",
+      desc: "A brilliant strategist whose intellect rivals his combat ability.",
+      stats: 96,
+      abilities: "Benihime, Bankai: Kannonbiraki Benihime Aratame",
+      strength: "Unpredictability, intelligence.",
+      weakness: "Over-relies on gambles.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Yhwach",
+      image: "/assets/Characters/yhwach.png",
+      role: "Quincy King",
+      desc: "The progenitor of the Quincy and the final enemy of Soul Society.",
+      stats: 100,
+      abilities: "The Almighty, Auswählen, future manipulation",
+      strength: "Godlike foresight and power.",
+      weakness: "Overconfidence in destiny.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Jugram Haschwalth",
+      image: "/assets/Characters/jugram.png",
+      role: "Grandmaster of the Sternritter",
+      desc: "Yhwach’s other half, embodying balance and judgment.",
+      stats: 97,
+      abilities: "Balance Schrift, fate redistribution",
+      strength: "Absolute counter-force.",
+      weakness: "Blind loyalty.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Uryu Ishida",
+      image: "/assets/Characters/uryu.png",
+      role: "Quincy / Sternritter",
+      desc: "A conflicted Quincy walking a dangerous path between loyalty and rebellion.",
+      stats: 94,
+      abilities: "Antithesis Schrift, advanced Quincy techniques",
+      strength: "Precision, adaptability.",
+      weakness: "Internal conflict.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Bazz-B",
+      image: "/assets/Characters/bazz_b.png",
+      role: "Sternritter",
+      desc: "A hot-headed Quincy wielding explosive flames.",
+      stats: 92,
+      abilities: "Burner Finger, fire manipulation",
+      strength: "High-output offense.",
+      weakness: "Impulsiveness.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    {
+      name: "Askin Nakk Le Vaar",
+      image: "/assets/Characters/askin.png",
+      role: "Elite Sternritter",
+      desc: "A lethal opponent who manipulates lethal dosage.",
+      stats: 95,
+      abilities: "Deathdealing, poison immunity",
+      strength: "Hax-based combat.",
+      weakness: "Arrogance.",
+      animeTitle: "Bleach: Thousand-Year Blood War",
+    },
+    // Solo Leveling Characters
+    {
+      name: "Sung Jinwoo",
+      image: "/assets/Characters/jinwoo.png",
+      role: "Shadow Monarch / S-Rank Hunter",
+      desc: "Once the weakest hunter, Jinwoo rises to become humanity’s strongest weapon.",
+      stats: 100,
+      abilities: "Shadow Extraction, Shadow Exchange, Monarch’s Domain, necromancy",
+      strength: "Infinite growth, absolute battlefield control.",
+      weakness: "Emotional isolation, overwhelming responsibility.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Cha Hae-In",
+      image: "/assets/Characters/cha_haein.png",
+      role: "S-Rank Hunter",
+      desc: "A powerful swordswoman sensitive to mana who is drawn to Jinwoo’s presence.",
+      stats: 94,
+      abilities: "Enhanced speed, sword mastery",
+      strength: "Precision, mana sensitivity.",
+      weakness: "Overexertion.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Yoo Jinho",
+      image: "/assets/Characters/jinho.png",
+      role: "Vice Guild Master",
+      desc: "Jinwoo’s loyal ally and business partner.",
+      stats: 82,
+      abilities: "Support skills, leadership",
+      strength: "Loyalty, strategic thinking.",
+      weakness: "Low combat power.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Go Gunhee",
+      image: "/assets/Characters/go_gunhee.png",
+      role: "Chairman of Korean Hunters Association",
+      desc: "A wise leader who recognizes Jinwoo’s potential early.",
+      stats: 88,
+      abilities: "Authority, latent combat strength",
+      strength: "Leadership, experience.",
+      weakness: "Old age.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Baek Yoonho",
+      image: "/assets/Characters/baek_yoonho.png",
+      role: "S-Rank Hunter / White Tiger Guild Master",
+      desc: "A fierce hunter who transforms into a beast.",
+      stats: 93,
+      abilities: "Beast Transformation, super strength",
+      strength: "Raw power, intimidation.",
+      weakness: "Limited control in beast form.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Choi Jong-In",
+      image: "/assets/Characters/choi.png",
+      role: "S-Rank Hunter / Mage",
+      desc: "Korea’s top fire mage known for overwhelming spell output.",
+      stats: 92,
+      abilities: "Fire magic, large-scale destruction",
+      strength: "Area control, ranged combat.",
+      weakness: "Low close-range defense.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Thomas Andre",
+      image: "/assets/Characters/andre.png",
+      role: "National-Level Hunter",
+      desc: "One of the strongest hunters in the world and leader of the Scavenger Guild.",
+      stats: 98,
+      abilities: "Super strength, reinforcement",
+      strength: "Physical dominance.",
+      weakness: "Overconfidence.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Beru",
+      image: "/assets/Characters/beru.png",
+      role: "Shadow Soldier / Ant King",
+      desc: "A loyal and terrifying shadow born from the Jeju Island raid.",
+      stats: 97,
+      abilities: "Flight, regeneration, shadow combat",
+      strength: "Absolute loyalty, ferocity.",
+      weakness: "Overzealous devotion.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Igris",
+      image: "/assets/Characters/igris.png",
+      role: "Shadow Knight",
+      desc: "A disciplined shadow soldier who serves as Jinwoo’s right hand.",
+      stats: 95,
+      abilities: "Sword mastery, enhanced agility",
+      strength: "Precision, discipline.",
+      weakness: "Strict adherence to orders.",
+      animeTitle: "Solo Leveling",
+    },
+    {
+      name: "Ashborn",
+      image: "/assets/Characters/ashborn.png",
+      role: "Original Shadow Monarch",
+      desc: "The former ruler who passes his power to Jinwoo.",
+      stats: 99,
+      abilities: "Shadow authority, monarch’s dominion",
+      strength: "Absolute command of shadows.",
+      weakness: "Fading existence.",
+      animeTitle: "Solo Leveling",
+    },
+    // One Piece Characters 
+    {
+      name: "Monkey D. Luffy",
+      image: "/assets/Characters/luffy.png",
+      role: "Captain of the Straw Hat Pirates",
+      desc: "A rubber-bodied pirate driven by freedom and the dream of becoming King of the Pirates.",
+      stats: 100,
+      abilities: "Gomu Gomu no Mi (Hito Hito no Mi: Nika), Haki, Gear Fifth",
+      strength: "Unbreakable will, limitless creativity, leadership.",
+      weakness: "Reckless, emotionally driven.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Roronoa Zoro",
+      image: "/assets/Characters/zoro.png",
+      role: "Combatant / Swordsman",
+      desc: "A master swordsman who aims to become the greatest in the world.",
+      stats: 97,
+      abilities: "Three-Sword Style, Advanced Armament Haki, Asura",
+      strength: "Endurance, killing intent, loyalty.",
+      weakness: "Poor sense of direction.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Nami",
+      image: "/assets/Characters/nami.png",
+      role: "Navigator",
+      desc: "A brilliant navigator obsessed with maps, money, and survival.",
+      stats: 88,
+      abilities: "Clima-Tact, weather manipulation",
+      strength: "Navigation skills, tactical thinking.",
+      weakness: "Low physical durability.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Usopp",
+      image: "/assets/Characters/usopp.png",
+      role: "Sniper",
+      desc: "A sharpshooter whose courage grows stronger with every battle.",
+      stats: 85,
+      abilities: "Sniping, Observation Haki",
+      strength: "Creativity, long-range combat.",
+      weakness: "Fear under pressure.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Sanji",
+      image: "/assets/Characters/sanji.png",
+      role: "Cook / Combatant",
+      desc: "A chivalrous fighter whose kicks burn hotter than fire.",
+      stats: 96,
+      abilities: "Diable Jambe, Germa enhancements, Observation Haki",
+      strength: "Speed, aerial combat.",
+      weakness: "Code against harming women.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Tony Tony Chopper",
+      image: "/assets/Characters/chopper.png",
+      role: "Doctor",
+      desc: "A reindeer who ate the Human-Human Fruit and became a doctor.",
+      stats: 84,
+      abilities: "Hito Hito no Mi, Monster Point",
+      strength: "Medical expertise, versatility.",
+      weakness: "Naivety.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Nico Robin",
+      image: "/assets/Characters/robin.png",
+      role: "Archaeologist",
+      desc: "A survivor who can read the Poneglyphs and uncover the world’s history.",
+      stats: 91,
+      abilities: "Hana Hana no Mi, Demonio Fleur",
+      strength: "Intelligence, battlefield control.",
+      weakness: "Emotional trauma.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Franky",
+      image: "/assets/Characters/franky.png",
+      role: "Shipwright",
+      desc: "A cyborg shipwright who built the Thousand Sunny.",
+      stats: 90,
+      abilities: "Cyborg weaponry, General Franky",
+      strength: "Durability, firepower.",
+      weakness: "High cola consumption.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Brook",
+      image: "/assets/Characters/brook.png",
+      role: "Musician / Swordsman",
+      desc: "A living skeleton revived by the power of the Revive-Revive Fruit.",
+      stats: 89,
+      abilities: "Soul Solid, Yomi Yomi no Mi",
+      strength: "Speed, soul-based attacks.",
+      weakness: "Fragile bones (ironically).",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Jinbe",
+      image: "/assets/Characters/jinbe.png",
+      role: "Helmsman / Fish-Man Karate Master",
+      desc: "A former Warlord who embodies honor and calm strength.",
+      stats: 95,
+      abilities: "Fish-Man Karate, Armament Haki",
+      strength: "Defensive mastery, composure.",
+      weakness: "Limited mobility on land.",
+      animeTitle: "One Piece",
+    },
+    {
+      name: "Shanks",
+      image: "/assets/Characters/shanks.png",
+      role: "Yonko / Red-Haired Pirates Captain",
+      desc: "A legendary pirate whose presence alone commands respect.",
+      stats: 99,
+      abilities: "Advanced Conqueror’s Haki",
+      strength: "Haki dominance, influence.",
+      weakness: "Unknown full capabilities.",
+      animeTitle: "One Piece",
+    },
+    // Full Metal Characters
+    {
+      name: "Edward Elric",
+      image: "/assets/Characters/edward.png",
+      role: "State Alchemist / Fullmetal Alchemist",
+      desc: "A prodigy alchemist searching for the Philosopher’s Stone to restore what he and his brother lost.",
+      stats: 94,
+      abilities: "Alchemy without transmutation circles, automail combat",
+      strength: "Intelligence, adaptability, moral conviction.",
+      weakness: "Impulsiveness, emotional sensitivity.",
+      animeTitle: "Fullmetal Alchemist: Brotherhood",
+    },
+    {
+      name: "Alphonse Elric",
+      image: "/assets/Characters/alphonse.png",
+      role: "Soul-Bound Alchemist",
+      desc: "Edward’s younger brother whose soul is bound to a suit of armor.",
+      stats: 92,
+      abilities: "Advanced alchemy, martial arts",
+      strength: "Kindness, composure, resilience.",
+      weakness: "Physical vulnerability of the soul seal.",
+      animeTitle: "Fullmetal Alchemist: Brotherhood",
+    },
+    {
+      name: "Roy Mustang",
+      image: "/assets/Characters/roy.png",
+      role: "State Alchemist / Flame Alchemist",
+      desc: "A calculating officer who plans to reform the corrupt military from within.",
+      stats: 95,
+      abilities: "Flame alchemy, battlefield command",
+      strength: "Strategic mind, overwhelming offense.",
+      weakness: "Requires ignition gloves, emotional rage.",
+      animeTitle: "Fullmetal Alchemist: Brotherhood",
+    },
+    {
+      name: "Riza Hawkeye",
+      image: "/assets/Characters/riza.png",
+      role: "Military Sniper",
+      desc: "A disciplined sharpshooter and Mustang’s most trusted ally.",
+      stats: 90,
+      abilities: "Marksmanship, tactical support",
+      strength: "Loyalty, precision.",
+      weakness: "Non-alchemist.",
+      animeTitle: "Fullmetal Alchemist: Brotherhood",
+    },
+    {
+      name: "Scar",
+      image: "/assets/Characters/scar.png",
+      role: "Avenger / Warrior Monk",
+      desc: "A survivor of genocide whose vengeance evolves into purpose.",
+      stats: 93,
+      abilities: "Deconstruction alchemy, combat endurance",
+      strength: "Raw power, resolve.",
+      weakness: "Tunnel vision driven by anger.",
+      animeTitle: "Fullmetal Alchemist: Brotherhood",
+    },
+    {
+      name: "Father",
+      image: "/assets/Characters/father.png",
+      role: "Primary Antagonist",
+      desc: "An ancient being seeking godhood through sacrifice.",
+      stats: 98,
+      abilities: "Philosopher’s Stone manipulation, energy control",
+      strength: "Immense power, long-term planning.",
+      weakness: "Arrogance, emotional emptiness.",
+      animeTitle: "Fullmetal Alchemist: Brotherhood",
+    },
+    // Hunter x Hunter
+    {
+      name: "Gon Freecss",
+      image: "/assets/Characters/gon.png",
+      role: "Hunter / Nen User",
+      desc: "A cheerful boy whose innocence hides terrifying resolve.",
+      stats: 92,
+      abilities: "Nen, Jajanken, enhanced senses",
+      strength: "Determination, adaptability.",
+      weakness: "Emotional volatility.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    {
+      name: "Killua Zoldyck",
+      image: "/assets/Characters/killua.png",
+      role: "Assassin / Hunter",
+      desc: "A prodigy assassin breaking free from his family’s control.",
+      stats: 95,
+      abilities: "Nen, Godspeed, assassination techniques",
+      strength: "Speed, combat instincts.",
+      weakness: "Emotional dependence on Gon.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    {
+      name: "Kurapika",
+      image: "/assets/Characters/kurapika.png",
+      role: "Hunter / Nen Specialist",
+      desc: "The last survivor of the Kurta Clan, driven by revenge.",
+      stats: 94,
+      abilities: "Nen chains, Emperor Time",
+      strength: "Strategic intelligence, deadly precision.",
+      weakness: "Shortened lifespan due to Emperor Time.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    {
+      name: "Leorio Paradinight",
+      image: "/assets/Characters/leorio.png",
+      role: "Hunter / Medical Student",
+      desc: "A hot-headed but compassionate future doctor.",
+      stats: 85,
+      abilities: "Nen-enhanced strikes",
+      strength: "Loyalty, emotional intelligence.",
+      weakness: "Limited combat experience.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    {
+      name: "Hisoka Morow",
+      image: "/assets/Characters/hisoka.png",
+      role: "Antagonist / Nen User",
+      desc: "A sadistic fighter obsessed with strong opponents.",
+      stats: 96,
+      abilities: "Bungee Gum, Texture Surprise",
+      strength: "Unpredictability, combat creativity.",
+      weakness: "Battle lust.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    {
+      name: "Chrollo Lucilfer",
+      image: "/assets/Characters/chrollo.png",
+      role: "Phantom Troupe Leader",
+      desc: "A calm and philosophical criminal mastermind.",
+      stats: 97,
+      abilities: "Skill Hunter, stolen Nen abilities",
+      strength: "Tactical brilliance, versatility.",
+      weakness: "Attachment to his troupe.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    {
+      name: "Meruem",
+      image: "/assets/Characters/meruem.png",
+      role: "Chimera Ant King",
+      desc: "A being born to rule who discovers humanity.",
+      stats: 100,
+      abilities: "Nen mastery, superhuman strength, adaptation",
+      strength: "Absolute power, rapid evolution.",
+      weakness: "Emotional awakening.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    {
+      name: "Netero",
+      image: "/assets/Characters/netero.png",
+      role: "Chairman of the Hunter Association",
+      desc: "A legendary martial artist who embodies human potential.",
+      stats: 99,
+      abilities: "100-Type Guanyin Bodhisattva",
+      strength: "Speed, experience, indomitable will.",
+      weakness: "Aging body.",
+      animeTitle: "Hunter x Hunter (2011)",
+    },
+    // Chainsaw man
+    {
+      name: "Denji",
+      image: "/assets/Characters/denji.png",
+      role: "Devil Hunter / Chainsaw Man",
+      desc: "A broke teenager who merges with his devil dog to become Chainsaw Man.",
+      stats: 94,
+      abilities: "Chainsaw transformation, regeneration, devil contracts",
+      strength: "High pain tolerance, relentless survival instinct.",
+      weakness: "Naivety, emotional manipulation.",
+      animeTitle: "Chainsaw Man",
+    },
+    {
+      name: "Pochita",
+      image: "/assets/Characters/pochita.png",
+      role: "Chainsaw Devil",
+      desc: "A mysterious devil who becomes Denji’s heart.",
+      stats: 99,
+      abilities: "Devil erasure, chainsaw manifestation",
+      strength: "Reality-altering power, loyalty.",
+      weakness: "Physical vulnerability in weakened state.",
+      animeTitle: "Chainsaw Man",
+    },
+    {
+      name: "Makima",
+      image: "/assets/Characters/makima.png",
+      role: "Public Safety Devil Hunter / Control Devil",
+      desc: "A manipulative authority figure with godlike control.",
+      stats: 100,
+      abilities: "Control, contracts, reality manipulation",
+      strength: "Absolute dominance, long-term planning.",
+      weakness: "Obsession with Chainsaw Man.",
+      animeTitle: "Chainsaw Man",
+    },
+    {
+      name: "Power",
+      image: "/assets/Characters/power.png",
+      role: "Blood Fiend",
+      desc: "A chaotic fiend driven by ego and loyalty to her cat.",
+      stats: 90,
+      abilities: "Blood manipulation, weapon creation",
+      strength: "Aggression, creativity in combat.",
+      weakness: "Impulsiveness, selfishness.",
+      animeTitle: "Chainsaw Man",
+    },
+    {
+      name: "Aki Hayakawa",
+      image: "/assets/Characters/aki.png",
+      role: "Public Safety Devil Hunter",
+      desc: "A serious hunter driven by revenge against devils.",
+      stats: 92,
+      abilities: "Fox Devil, Curse Devil, Future Devil",
+      strength: "Discipline, tactical combat.",
+      weakness: "Shortened lifespan due to contracts.",
+      animeTitle: "Chainsaw Man",
+    },
+    {
+      name: "Katana Man",
+      image: "/assets/Characters/katanaman.png",
+      role: "Hybrid Devil",
+      desc: "A vengeful hybrid seeking revenge against Denji.",
+      stats: 91,
+      abilities: "Katana transformation, enhanced speed",
+      strength: "Deadly precision, durability.",
+      weakness: "Tunnel-visioned hatred.",
+      animeTitle: "Chainsaw Man",
+    },
+    {
+      name: "Reze",
+      image: "/assets/Characters/reze.png",
+      role: "Bomb Devil Hybrid",
+      desc: "A charming assassin whose affection masks lethal intent.",
+      stats: 95,
+      abilities: "Explosion generation, hybrid regeneration",
+      strength: "Deception, destructive power.",
+      weakness: "Emotional conflict.",
+      animeTitle: "Chainsaw Man",
+    },
+    {
+      name: "Gun Devil",
+      image: "/assets/Characters/gun_devil.png",
+      role: "Primal Threat",
+      desc: "A catastrophic devil responsible for mass destruction.",
+      stats: 100,
+      abilities: "Extreme speed, ballistic annihilation",
+      strength: "Unmatched kill potential.",
+      weakness: "Fragmented existence.",
+      animeTitle: "Chainsaw Man",
+    },
+    // Spy x Family
+    {
+      name: "Loid Forger",
+      image: "/assets/Characters/loid.png",
+      role: "Master Spy / Agent Twilight",
+      desc: "An elite spy forced to build a fake family to prevent war.",
+      stats: 95,
+      abilities: "Espionage, combat tactics, disguises",
+      strength: "Strategic genius, adaptability.",
+      weakness: "Emotional detachment.",
+      animeTitle: "Spy x Family",
+    },
+    {
+      name: "Yor Forger",
+      image: "/assets/Characters/yor.png",
+      role: "Assassin / Thorn Princess",
+      desc: "A deadly assassin pretending to be a normal housewife.",
+      stats: 96,
+      abilities: "Superhuman strength, assassination skills",
+      strength: "Raw power, loyalty.",
+      weakness: "Social awkwardness.",
+      animeTitle: "Spy x Family",
+    },
+    {
+      name: "Anya Forger",
+      image: "/assets/Characters/anya.png",
+      role: "Telepathic Child",
+      desc: "A mind-reading child determined to keep her family together.",
+      stats: 80,
+      abilities: "Telepathy",
+      strength: "Emotional intelligence, insight.",
+      weakness: "Childlike immaturity.",
+      animeTitle: "Spy x Family",
+    },
+    {
+      name: "Bond Forger",
+      image: "/assets/Characters/bond.png",
+      role: "Precognitive Dog",
+      desc: "A large, fluffy dog with the ability to see the future.",
+      stats: 78,
+      abilities: "Precognition",
+      strength: "Loyalty, foresight.",
+      weakness: "Limited understanding of humans.",
+      animeTitle: "Spy x Family",
+    },
+    {
+      name: "Damian Desmond",
+      image: "/assets/Characters/damian.png",
+      role: "Eden Academy Student",
+      desc: "A proud but insecure child seeking approval from his father.",
+      stats: 75,
+      abilities: "Political influence (family)",
+      strength: "Determination, pride.",
+      weakness: "Emotional immaturity.",
+      animeTitle: "Spy x Family",
+    },
+    {
+      name: "Becky Blackbell",
+      image: "/assets/Characters/becky.png",
+      role: "Eden Academy Student",
+      desc: "Anya’s loyal and outspoken best friend.",
+      stats: 74,
+      abilities: "Social influence",
+      strength: "Confidence, loyalty.",
+      weakness: "Naivety.",
+      animeTitle: "Spy x Family",
+    },
+    {
+      name: "Donovan Desmond",
+      image: "/assets/Characters/donovan.png",
+      role: "Political Figure / Target",
+      desc: "A reclusive politician whose actions could spark war.",
+      stats: 88,
+      abilities: "Strategic manipulation",
+      strength: "Influence, secrecy.",
+      weakness: "Paranoia.",
+      animeTitle: "Spy x Family",
+    },
+    {
+      name: "Yuri Briar",
+      image: "/assets/Characters/yuri.png",
+      role: "Secret Police Officer",
+      desc: "Yor’s overprotective brother with extreme patriotism.",
+      stats: 89,
+      abilities: "Interrogation, endurance",
+      strength: "Pain tolerance, loyalty.",
+      weakness: "Obsessive behavior.",
+      animeTitle: "Spy x Family",
+    },
+    // Death Note Characters 
+    {
+      name: "Light Yagami",
+      image: "/assets/Characters/light.png",
+      role: "Kira / Death Note User",
+      desc: "A brilliant student who becomes judge, jury, and executioner of the world.",
+      stats: 98,
+      abilities: "Death Note usage, strategic manipulation",
+      strength: "Genius intellect, psychological warfare.",
+      weakness: "God complex, arrogance.",
+      animeTitle: "Death Note",
+    },
+    {
+      name: "L Lawliet",
+      image: "/assets/Characters/l.png",
+      role: "Detective",
+      desc: "A legendary detective determined to expose Kira.",
+      stats: 97,
+      abilities: "Deductive reasoning, analytical intuition",
+      strength: "Unmatched logic, deception.",
+      weakness: "Social isolation.",
+      animeTitle: "Death Note",
+    },
+    {
+      name: "Ryuk",
+      image: "/assets/Characters/ryuk.png",
+      role: "Shinigami",
+      desc: "A bored god of death who drops the Death Note into the human world.",
+      stats: 90,
+      abilities: "Shinigami abilities, Death Note knowledge",
+      strength: "Immortality, detachment.",
+      weakness: "Apathy.",
+      animeTitle: "Death Note",
+    },
+    {
+      name: "Misa Amane",
+      image: "/assets/Characters/misa.png",
+      role: "Second Kira",
+      desc: "A devoted idol who aids Kira out of love and obsession.",
+      stats: 85,
+      abilities: "Death Note usage, Shinigami Eyes",
+      strength: "Fan devotion, emotional leverage.",
+      weakness: "Naivety, dependence on Light.",
+      animeTitle: "Death Note",
+    },
+    {
+      name: "Near",
+      image: "/assets/Characters/near.png",
+      role: "Detective / L’s Successor",
+      desc: "A calm and methodical genius who continues L’s investigation.",
+      stats: 96,
+      abilities: "Strategic planning, probability analysis",
+      strength: "Patience, logical foresight.",
+      weakness: "Detached demeanor.",
+      animeTitle: "Death Note",
+    },
+    {
+      name: "Mello",
+      image: "/assets/Characters/mello.png",
+      role: "Rogue Investigator",
+      desc: "A reckless but brilliant rival determined to surpass Near.",
+      stats: 92,
+      abilities: "Criminal tactics, intelligence",
+      strength: "Bold decision-making.",
+      weakness: "Impulsiveness.",
+      animeTitle: "Death Note",
     },
   ];
 
-  for (const character of characterList) {
-    const parentAnime = animeMap[character.animeTitle];
+for (const character of characterList) {
+  const parentAnime = animeMap[character.animeTitle];
 
-    if (!parentAnime) {
-      console.warn(
-        `No anime found for character "${character.name}" with animeTitle "${character.animeTitle}". Skipping.`
-      );
-      continue;
-    }
-
-    await prisma.character.upsert({
-      where: { name: character.name }, 
-      update: {
-        image: character.image,
-        role: character.role,
-        desc: character.desc,
-        stats: character.stats,
-        abilities: character.abilities,
-        strength: character.strength,
-        weakness: character.weakness,
-        anime: {
-          connect: { id: parentAnime.id },
-        },
-      },
-      create: {
-        name: character.name,
-        image: character.image,
-        role: character.role,
-        desc: character.desc,
-        stats: character.stats,
-        abilities: character.abilities,
-        strength: character.strength,
-        weakness: character.weakness,
-        anime: {
-          connect: { id: parentAnime.id },
-        },
-      },
-    });
+  if (!parentAnime) {
+    console.warn(
+      `No anime found for character "${character.name}" with animeTitle "${character.animeTitle}". Skipping.`
+    );
+    continue;
   }
 
-  console.log("✅ Seeded anime and characters with relations");
+  await prisma.character.upsert({
+    where: { name: character.name },
+    update: {
+      image: character.image,
+      role: character.role ?? null,
+      desc: character.desc ?? null,
+      stats: character.stats ?? null,
+      abilities: character.abilities ?? null,
+      strength: character.strength ?? null,
+      weakness: character.weakness ?? null,
+      anime: { connect: { id: parentAnime.id } },
+    },
+    create: {
+      name: character.name,
+      image: character.image,
+      role: character.role ?? null,
+      desc: character.desc ?? null,
+      stats: character.stats ?? null,
+      abilities: character.abilities ?? null,
+      strength: character.strength ?? null,
+      weakness: character.weakness ?? null,
+      anime: { connect: { id: parentAnime.id } },
+    },
+  });
+}
+
+await seedAnimeStaffForAllAnime(createdAnimeRecords);
+
+console.log("Seeded anime, characters, and staff credits");
 }
 
 main()
@@ -344,3 +1872,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
