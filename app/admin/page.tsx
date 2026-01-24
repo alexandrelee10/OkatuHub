@@ -14,7 +14,6 @@ export default async function AdminPage() {
 
   return (
     <main className="min-h-screen text-white pt-16 pb-24">
-      <NavBar />
       {/* Modern background */}
       <div className="fixed inset-0 -z-10 bg-black" />
       <div className="fixed inset-0 -z-10 bg-[radial-gradient(900px_circle_at_20%_10%,rgba(220,38,38,0.22),transparent_55%),radial-gradient(900px_circle_at_80%_30%,rgba(255,255,255,0.06),transparent_60%)]" />

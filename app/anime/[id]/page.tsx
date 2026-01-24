@@ -23,7 +23,6 @@ export default async function AnimeDetailPage({ params }: AnimeDetailPageProps) 
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
-      <NavBar />
       <section className="relative h-[280px] w-full overflow-hidden">
         <div className=" absolute pt-4 px-4 z-99">
           <Link

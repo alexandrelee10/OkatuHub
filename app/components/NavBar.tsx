@@ -32,7 +32,7 @@ const NavBar = () => {
 
   const navLinks = [
     { label: "Anime", href: "/anime" },
-    { label: "Characters", href: "#characters" },
+    { label: "Characters", href: "/characters" },
   ];
 
   const closeAll = () => {
@@ -453,9 +453,6 @@ const NavBar = () => {
           </div>
         </div>
       </div>
-
-      {/* Spacer so content doesn't hide under fixed nav */}
-      <div className="h-16" />
     </>
   );
 };

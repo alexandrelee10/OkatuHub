@@ -1,112 +1,213 @@
-// app/characters/[id]/page.tsx
+import prisma from "@/app/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import prisma from "@/app/lib/prisma";
 
-interface CharacterPageProps {
+type CharacterDetailPageProps = {
   params: Promise<{ id: string }>;
+};
+
+function InfoPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">
+      {children}
+    </span>
+  );
 }
 
-export default async function CharacterPage({ params }: CharacterPageProps) {
-  const { id } = await params;
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-lg">
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-white/70">
+        {title}
+      </h2>
+      <div className="text-sm leading-6 text-white/80">{children}</div>
+    </section>
+  );
+}
 
+export default async function CharacterDetailPage({
+  params,
+}: CharacterDetailPageProps) {
+  const { id } = await params;
   if (!id) return notFound();
 
-  const character = await prisma.character.findUnique({
+  const char = await prisma.character.findUnique({
     where: { id },
-    include: { anime: true },
+    include: {
+      anime: { select: { id: true, title: true, image: true, genre: true } },
+    },
   });
 
-  if (!character) return notFound();
+  if (!char) return notFound();
 
-  const anime = character.anime;
+  const hasExtra =
+    !!char.desc || !!char.abilities || !!char.strength || !!char.weakness;
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-black to-red-950 text-white pt-24 pb-16 px-4">
-      <section className="max-w-4xl mx-auto space-y-8">
-        {/* Breadcrumbs */}
-        <div className="flex items-center justify-between text-sm text-zinc-400">
-          <Link href="/" className="hover:text-red-300">
-            ← Home
+    <main className="min-h-screen bg-gradient-to-b from-black via-zinc-950 to-red-950 text-white pt-24 pb-16 px-4">
+      <section className="mx-auto w-full max-w-6xl space-y-10">
+        {/* Top nav */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href="/characters"
+            className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/10"
+          >
+            ← Back to Characters
           </Link>
+
+          {char.anime?.id ? (
+            <Link
+              href={`/anime/${char.anime.id}`}
+              className="inline-flex items-center rounded-full border border-red-500/70 bg-red-500/10 px-4 py-2 text-sm font-medium text-white transition hover:border-red-500 hover:bg-red-500/20"
+            >
+              View Anime →
+            </Link>
+          ) : null}
         </div>
 
-        {/* Header: image + main info */}
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="relative w-full md:w-64 h-72 md:h-80 rounded-2xl overflow-hidden border border-zinc-800">
-            <Image
-              src={character.image || "/Characters/placeholder.png"}
-              alt={character.name}
-              fill
-              sizes="(max-width: 768px) 100vw, 256px"
-              className="object-cover object-center"
-            />
+        {/* Hero */}
+        <header className="grid gap-8 lg:grid-cols-[360px_1fr] lg:items-start">
+          {/* Image */}
+          <div className="mx-auto lg:mx-0">
+            <div className="relative h-80 w-80 overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-2xl">
+              <Image
+                src={char.image ?? "/assets/placeholder.png"}
+                alt={char.name}
+                fill
+                priority
+                sizes="(max-width: 768px) 320px, 360px"
+                className="object-cover"
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+            </div>
+
+            {/* Quick stats card under image */}
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex flex-wrap gap-2">
+                <InfoPill>Show: {char.anime?.title ?? "Unknown"}</InfoPill>
+                <InfoPill>Role: {char.role ?? "Character"}</InfoPill>
+                {typeof char.stats === "number" ? (
+                  <InfoPill>Stats: {char.stats}</InfoPill>
+                ) : (
+                  <InfoPill>Stats: N/A</InfoPill>
+                )}
+              </div>
+
+              {char.anime?.genre ? (
+                <p className="mt-3 text-xs text-white/55">
+                  Genres: {char.anime.genre}
+                </p>
+              ) : null}
+            </div>
           </div>
 
-          <div className="flex-1 space-y-3">
-            <h1 className="text-3xl md:text-4xl font-semibold">
-              {character.name}
+          {/* Text */}
+          <div className="space-y-4 text-center lg:text-left">
+            <p className="text-xs uppercase tracking-[0.25em] text-white/55">
+              {char.anime?.title ?? "Unknown show"}
+            </p>
+
+            <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
+              {char.name}
             </h1>
 
-            {character.role && (
-              <p className="text-sm text-zinc-300">{character.role}</p>
-            )}
+            <p className="mx-auto max-w-2xl text-sm leading-6 text-white/75 lg:mx-0 md:text-base">
+              {char.desc
+                ? char.desc
+                : "No description yet. Add a bio in your admin/seed to make this page feel alive."}
+            </p>
 
-            {anime && (
-              <p className="text-sm text-zinc-400">
-                From{" "}
+            {/* Action row */}
+            <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
+              {char.anime?.id ? (
                 <Link
-                  href={`/anime/${anime.id}`}
-                  className="text-red-300 hover:text-red-200"
+                  href={`/anime/${char.anime.id}`}
+                  className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/10"
                 >
-                  {anime.title}
+                  Go to {char.anime.title}
                 </Link>
-              </p>
+              ) : null}
+
+              <Link
+                href="/anime"
+                className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 transition hover:border-white/20 hover:bg-white/10"
+              >
+                Browse Anime
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Details sections */}
+        <div className="grid gap-6 md:grid-cols-2">
+          <Section title="Abilities">
+            {char.abilities ? (
+              <p>{char.abilities}</p>
+            ) : (
+              <p className="text-white/60">No abilities added yet.</p>
             )}
+          </Section>
 
-            {character.desc && (
-              <p className="text-sm text-zinc-200 mt-3">
-                {character.desc}
-              </p>
+          <Section title="Strengths">
+            {char.strength ? (
+              <p>{char.strength}</p>
+            ) : (
+              <p className="text-white/60">No strengths added yet.</p>
             )}
-          </div>
+          </Section>
+
+          <Section title="Weaknesses">
+            {char.weakness ? (
+              <p>{char.weakness}</p>
+            ) : (
+              <p className="text-white/60">No weaknesses added yet.</p>
+            )}
+          </Section>
+
+          <Section title="Quick Info">
+            <ul className="space-y-2">
+              <li className="flex items-center justify-between gap-4">
+                <span className="text-white/60">Character</span>
+                <span className="text-white/85">{char.name}</span>
+              </li>
+
+              <li className="flex items-center justify-between gap-4">
+                <span className="text-white/60">Role</span>
+                <span className="text-white/85">{char.role ?? "Character"}</span>
+              </li>
+
+              <li className="flex items-center justify-between gap-4">
+                <span className="text-white/60">Stats</span>
+                <span className="text-white/85">
+                  {typeof char.stats === "number" ? char.stats : "N/A"}
+                </span>
+              </li>
+
+              <li className="flex items-center justify-between gap-4">
+                <span className="text-white/60">Show</span>
+                <span className="text-white/85">
+                  {char.anime?.title ?? "Unknown"}
+                </span>
+              </li>
+            </ul>
+          </Section>
         </div>
 
-        {/* Stats / strengths / weaknesses */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 space-y-2">
-            <h2 className="text-sm font-semibold text-zinc-200">Stats</h2>
-            <p className="text-3xl font-bold text-red-300">
-              {character.stats ?? 0}
-            </p>
-            <p className="text-xs text-zinc-400">
-              Overall power rating (your own scale).
+        {!hasExtra ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+            <p className="text-sm text-white/70">
+              This character page is ready — add abilities/strengths/weaknesses in
+              your seed (or admin form) to make it look even better.
             </p>
           </div>
-
-          <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 space-y-2">
-            <h2 className="text-sm font-semibold text-zinc-200">Strengths</h2>
-            <p className="text-xs text-zinc-300 whitespace-pre-line">
-              {character.strength || "To be added."}
-            </p>
-          </div>
-
-          <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 space-y-2">
-            <h2 className="text-sm font-semibold text-zinc-200">Weaknesses</h2>
-            <p className="text-xs text-zinc-300 whitespace-pre-line">
-              {character.weakness || "To be added."}
-            </p>
-          </div>
-        </div>
-
-        {/* Abilities */}
-        <div className="bg-zinc-900/70 border border-zinc-800 rounded-2xl p-4 space-y-2">
-          <h2 className="text-sm font-semibold text-zinc-200">Abilities</h2>
-          <p className="text-xs text-zinc-300 whitespace-pre-line">
-            {character.abilities || "Abilities coming soon."}
-          </p>
-        </div>
+        ) : null}
       </section>
     </main>
   );

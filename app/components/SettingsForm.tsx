@@ -4,6 +4,7 @@
 import { useState, FormEvent } from "react";
 import Image from "next/image";
 import ImageUploadDropzone from "./ImageUploadDropzone";
+import ThemeToggle from "./ThemeToggle";
 
 interface SettingsFormProps {
   user: {
@@ -238,7 +239,9 @@ export default function SettingsForm({ user }: SettingsFormProps) {
           {success}
         </p>
       )}
-
+      <div>
+        <ThemeToggle />
+      </div>
       <button
         type="submit"
         disabled={isSubmitting}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import assets from "@/app/assets/assets";
 import { useRouter } from "next/navigation";
+import NavBar from "@/app/components/NavBar";
 
 const SignInPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);

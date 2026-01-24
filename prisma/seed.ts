@@ -272,7 +272,7 @@ async function main() {
       creator: "Eiichiro Oda",
       ep_count: 1100,
       season: 21,
-      image: "/assets/Anime/one_piece.png",
+      image: "/assets/Anime/onepiece.png",
       genre: "Action, Adventure, Comedy",
       format: "TV",
       eps_dur: "24m",
@@ -300,7 +300,7 @@ async function main() {
       creator: "Yoshihiro Togashi",
       ep_count: 148,
       season: 7,
-      image: "/assets/Anime/hxh.png",
+      image: "/assets/Anime/hunterxhunter.png",
       genre: "Action, Adventure, Fantasy",
       format: "TV",
       eps_dur: "24m",
@@ -314,7 +314,7 @@ async function main() {
       creator: "Tatsuki Fujimoto",
       ep_count: 12,
       season: 1,
-      image: "/assets/Anime/chainsaw_man.png",
+      image: "/assets/Anime/chanin_saw.png",
       genre: "Action, Dark Fantasy, Supernatural",
       format: "TV",
       eps_dur: "24m",
@@ -328,7 +328,7 @@ async function main() {
       creator: "Tatsuya Endo",
       ep_count: 37,
       season: 2,
-      image: "/assets/Anime/spy_x_family.png",
+      image: "/assets/Anime/spyxfamily.png",
       genre: "Comedy, Action, Slice of Life",
       format: "TV",
       eps_dur: "24m",
@@ -342,7 +342,7 @@ async function main() {
       creator: "Tsugumi Ohba",
       ep_count: 37,
       season: 1,
-      image: "/assets/Anime/death_note.png",
+      image: "/assets/Anime/deathnote.png",
       genre: "Thriller, Mystery, Supernatural",
       format: "TV",
       eps_dur: "23m",
@@ -543,7 +543,7 @@ async function main() {
     },
     {
       name: "Kento Nanami",
-      image: "/assets/Characters/nanami.png",
+      image: "/assets/Characters/kento.png",
       role: "Grade 1 Jujutsu Sorcerer",
       desc: "A former salaryman who values efficiency and responsibility above heroics.",
       stats: 93,
@@ -554,7 +554,7 @@ async function main() {
     },
     {
       name: "Maki Zenin",
-      image: "/assets/Characters/maki.png",
+      image: "/assets/Characters/maki2.png",
       role: "Jujutsu Sorcerer / Zenin Clan Outcast",
       desc: "A weapon master born without cursed energy who defies sorcerer norms.",
       stats: 94,
@@ -566,7 +566,7 @@ async function main() {
     // Curses Villains
     {
       name: "Ryomen Sukuna",
-      image: "/assets/Characters/sukuna.png",
+      image: "/assets/Characters/sukana2.png",
       role: "King of Curses",
       desc: "An ancient and sadistic curse whose power terrifies even elite sorcerers.",
       stats: 100,
@@ -645,7 +645,7 @@ async function main() {
     },
     {
       name: "Inosuke Hashibira",
-      image: "/assets/Characters/inosuke.png",
+      image: "/assets/Characters/inosuke2.png",
       role: "Demon Slayer",
       desc: "A feral and aggressive fighter raised in the mountains.",
       stats: 90,
@@ -656,7 +656,7 @@ async function main() {
     },
     {
       name: "Kyojuro Rengoku",
-      image: "/assets/Characters/rengoku.png",
+      image: "/assets/Characters/rengoku2.png",
       role: "Flame Hashira",
       desc: "A bright, passionate Hashira who fights with unwavering conviction.",
       stats: 94,
@@ -667,7 +667,7 @@ async function main() {
     },
     {
       name: "Giyu Tomioka",
-      image: "/assets/Characters/giyu.png",
+      image: "/assets/Characters/giyu2.png",
       role: "Water Hashira",
       desc: "A stoic swordsman who introduces Tanjiro to the Demon Slayer Corps.",
       stats: 94,
@@ -678,7 +678,7 @@ async function main() {
     },
     {
       name: "Tengen Uzui",
-      image: "/assets/Characters/tengen.png",
+      image: "/assets/Characters/uzi2.png",
       role: "Sound Hashira",
       desc: "A flamboyant ninja turned Demon Slayer who values flash and flair.",
       stats: 93,
@@ -711,7 +711,7 @@ async function main() {
     },
     {
       name: "Doma",
-      image: "/assets/Characters/doma.png",
+      image: "/assets/Characters/douma.png",
       role: "Upper Rank Two",
       desc: "A charismatic and cruel demon who hides his complete lack of empathy behind a friendly facade.",
       stats: 98,
@@ -745,7 +745,7 @@ async function main() {
     },
     {
       name: "Shoto Todoroki",
-      image: "/assets/Characters/todoroki.png",
+      image: "/assets/Characters/todoroki2.png",
       role: "Hero Student",
       desc: "A gifted student wielding both fire and ice.",
       stats: 92,
@@ -756,7 +756,7 @@ async function main() {
     },
     {
       name: "Ochaco Uraraka",
-      image: "/assets/Characters/uraraka.png",
+      image: "/assets/Characters/ochacho.png",
       role: "Hero Student",
       desc: "A determined student who fights to support her family.",
       stats: 88,
@@ -778,7 +778,7 @@ async function main() {
     },
     {
       name: "All Might",
-      image: "/assets/Characters/all_might.png",
+      image: "/assets/Characters/allmight.png",
       role: "Symbol of Peace / Former No.1 Hero",
       desc: "The legendary hero who upheld peace and passed his power to Midoriya.",
       stats: 98,
@@ -789,7 +789,7 @@ async function main() {
     },
     {
       name: "Endeavor",
-      image: "/assets/Characters/endeavor.png",
+      image: "/assets/Characters/endeavor2.png",
       role: "No.1 Pro Hero",
       desc: "A ruthless hero obsessed with surpassing All Might.",
       stats: 96,
@@ -1011,7 +1011,7 @@ async function main() {
     },
     {
       name: "Yasutora Sado",
-      image: "/assets/Characters/chad.png",
+      image: "/assets/Characters/sado.png",
       role: "Fullbringer / Brawler",
       desc: "A loyal and stoic fighter whose strength protects those he cares about.",
       stats: 92,
@@ -1056,7 +1056,7 @@ async function main() {
     },
     {
       name: "Sōsuke Aizen",
-      image: "/assets/Characters/aizen.png",
+      image: "/assets/Characters/sosuke.png",
       role: "Former Captain / Mastermind",
       desc: "A genius manipulator whose intellect and power rival gods, imprisoned yet pivotal in the Quincy war.",
       stats: 100,
@@ -1078,7 +1078,7 @@ async function main() {
     },
     {
       name: "Kaname Tōsen",
-      image: "/assets/Characters/tosen.png",
+      image: "/assets/Characters/kaname.png",
       role: "Former Captain / Justice Seeker",
       desc: "A blind warrior who pursued justice at the cost of his humanity.",
       stats: 93,
@@ -1134,7 +1134,7 @@ async function main() {
     },
     {
       name: "Yhwach",
-      image: "/assets/Characters/yhwach.png",
+      image: "/assets/Characters/ywach.png",
       role: "Quincy King",
       desc: "The progenitor of the Quincy and the final enemy of Soul Society.",
       stats: 100,
@@ -1512,7 +1512,7 @@ async function main() {
     },
     {
       name: "Kurapika",
-      image: "/assets/Characters/kurapika.png",
+      image: "/assets/Characters/kurpika.png",
       role: "Hunter / Nen Specialist",
       desc: "The last survivor of the Kurta Clan, driven by revenge.",
       stats: 94,

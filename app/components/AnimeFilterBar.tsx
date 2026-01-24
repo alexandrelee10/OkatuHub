@@ -19,7 +19,7 @@ function SelectField({
   placeholder?: string;
 }) {
   return (
-    <div className="w-full min-w-[160px]">
+    <div className="w-full min-w-[160px] dark:text-black">
       <label className="block text-sm font-medium text-zinc-300 mb-2">
         {label}
       </label>
@@ -49,6 +49,25 @@ function SelectField({
   );
 }
 
+export type AnimeFilters = {
+  q: string;
+  genre: string;
+  year: string;
+  season: string;
+  format: string;
+  airingStatus: string;
+};
+
+type AnimeFilterBarProps = {
+  initialQuery?: string;
+  initialGenre?: string;
+  initialYear?: string;
+  initialSeason?: string;
+  initialFormat?: string;
+  initialAiringStatus?: string;
+  onChange?: (filters: AnimeFilters) => void;
+};
+
 export default function AnimeFilterBar({
   initialQuery = "",
   initialGenre = "",
@@ -57,23 +76,7 @@ export default function AnimeFilterBar({
   initialFormat = "",
   initialAiringStatus = "",
   onChange,
-}: {
-  initialQuery?: string;
-  initialGenre?: string;
-  initialYear?: string;
-  initialSeason?: string;
-  initialFormat?: string;
-  initialAiringStatus?: string;
-  onChange?: (filters: {
-    q: string;
-    genre: string;
-    year: string;
-    season: string;
-    format: string;
-    airingStatus: string;
-  }) => void;
-}) {
-
+}: AnimeFilterBarProps) {
   const [q, setQ] = React.useState(initialQuery);
   const [genre, setGenre] = React.useState(initialGenre);
   const [year, setYear] = React.useState(initialYear);
@@ -122,10 +125,9 @@ export default function AnimeFilterBar({
   ];
 
   return (
-    <section className="w-full bg-black">
-      <div>
+    <section className="w-full">
+      <div className="rounded-2xl border border-white/10 bg-white/5">
         <div className="px-6 py-5 flex flex-col gap-5">
-          {/* top row */}
           <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr_1fr_1fr_1fr_1fr_auto] gap-5 items-end">
             {/* Search */}
             <div className="w-full">
@@ -152,14 +154,8 @@ export default function AnimeFilterBar({
             <SelectField label="Year" value={year} onChange={setYear} options={YEARS} />
             <SelectField label="Season" value={season} onChange={setSeason} options={SEASONS} />
             <SelectField label="Format" value={format} onChange={setFormat} options={FORMATS} />
-            <SelectField
-              label="Airing Status"
-              value={airingStatus}
-              onChange={setAiringStatus}
-              options={AIRING}
-            />
+            <SelectField label="Airing Status" value={airingStatus} onChange={setAiringStatus} options={AIRING} />
 
-            {/* icon button */}
             <button
               type="button"
               className="h-[46px] w-[46px] rounded-xl bg-white/5 border border-white/10
@@ -167,6 +163,14 @@ export default function AnimeFilterBar({
                          hover:bg-white/10 transition"
               aria-label="More filters"
               title="More filters"
+              onClick={() => {
+                setQ("");
+                setGenre("");
+                setYear("");
+                setSeason("");
+                setFormat("");
+                setAiringStatus("");
+              }}
             >
               <SlidersHorizontal size={18} />
             </button>
@@ -176,4 +180,3 @@ export default function AnimeFilterBar({
     </section>
   );
 }
-

@@ -3,86 +3,132 @@
 import assets from "@/app/assets/assets";
 import Link from "next/link";
 import Image from "next/image";
-import React, { FormEvent, useState } from "react";
+import React, { FormEvent, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import NavBar from "@/app/components/NavBar";
 
+type FieldErrors = {
+  username?: string;
+  password?: string;
+  confirmPassword?: string;
+  email?: string;
+  general?: string;
+};
 
 const SignUpPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+
+  // field-level errors
+  const [errors, setErrors] = useState<FieldErrors>({});
+
   const router = useRouter();
 
-  // handle submit 
-const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setError("");
+  const inputBase =
+    "w-full rounded-lg bg-zinc-800 border px-3 py-2 text-sm focus:outline-none focus:ring-2";
+  const normalBorder = "border-zinc-700 focus:ring-blue-950";
+  const errorBorder = "border-red-500/80 focus:ring-red-500/60";
 
-  if (password !== confirmPassword) {
-    setError("Passwords do not match");
-    return;
-  }
+  const getInputClass = (hasError: boolean) =>
+    `${inputBase} ${hasError ? errorBorder : normalBorder}`;
 
-  setIsSubmitting(true);
+  // small helper: assign server error message to a field (best-effort)
+  const mapServerErrorToFields = (msg: string): FieldErrors => {
+    const m = msg.toLowerCase();
 
-  const formData = new FormData(e.currentTarget);
+    // username
+    if (m.includes("username") && (m.includes("taken") || m.includes("exists") || m.includes("already"))) {
+      return { username: msg };
+    }
 
-  const payload = {
-    firstName: formData.get("firstname")?.toString() || "",
-    lastName: formData.get("lastname")?.toString() || "",
-    email: formData.get("email")?.toString() || "",
-    username: formData.get("username")?.toString() || "",
-    password,
-    confirmPassword,
+    // email
+    if (m.includes("email") && (m.includes("taken") || m.includes("exists") || m.includes("already"))) {
+      return { email: msg };
+    }
+
+    // password
+    if (m.includes("password") && (m.includes("weak") || m.includes("short") || m.includes("invalid"))) {
+      return { password: msg };
+    }
+
+    // fallback
+    return { general: msg };
   };
 
-  try {
-    const res = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrors({}); // clear old errors
 
-    console.log("Signup status:", res.status, "ok:", res.ok);
+    // client-side password match check
+    if (password !== confirmPassword) {
+      setErrors({
+        password: "Passwords do not match.",
+        confirmPassword: "Passwords do not match.",
+      });
+      return;
+    }
 
-    let data: any;
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+
+    const payload = {
+      firstName: formData.get("firstname")?.toString() || "",
+      lastName: formData.get("lastname")?.toString() || "",
+      email: formData.get("email")?.toString() || "",
+      username: formData.get("username")?.toString() || "",
+      password,
+      confirmPassword,
+    };
+
     try {
-      data = await res.json();
-      console.log("Signup JSON:", data);
-    } catch (parseErr) {
-      console.error("Failed to parse JSON from signup:", parseErr);
-      setError("Server sent an invalid response.");
-      return;
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        // ignore parse error; we’ll show a generic message below
+      }
+
+      if (!res.ok) {
+        const message =
+          data?.error ||
+          data?.message ||
+          (Array.isArray(data) && data?.[0]?.message) ||
+          "Failed to sign up.";
+
+        // map message to field errors
+        const mapped = mapServerErrorToFields(String(message));
+
+        // special-case: Prisma unique constraint (if your API returns something like it)
+        // If your backend returns a code/key, you can handle it here too.
+
+        setErrors(mapped);
+        return;
+      }
+
+      router.push("/");
+    } catch (err) {
+      setErrors({ general: "Something went wrong. Please try again." });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (!res.ok) {
-      setError(data.error || "Failed to sign up");
-      return;
-    }
-
-    // success
-    console.log("Signed up user:", data);
-    router.push('/')
-    
-  } catch (err) {
-    console.error("Signup request failed:", err);
-    setError("Something went wrong");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-
+  };
 
   return (
     <section
       id="signup"
       className="min-h-screen flex items-center justify-center bg-gradient-to-b from-black to-blue-950 px-4"
     >
-      {/* Wrapper: logo + card */}
+
       <div className="w-full max-w-md flex flex-col items-center gap-6">
-        {/* Logo (clickable home) */}
         <Link href="/">
           <Image
             src={assets.logo}
@@ -93,9 +139,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
           />
         </Link>
 
-        {/* Card */}
         <div className="w-full bg-zinc-900/80 rounded-2xl shadow-xl p-8 text-white border border-zinc-800">
-          {/* Hero Image */}
           <div>
             <img
               src={assets.signup_her}
@@ -115,7 +159,6 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
             <form className="space-y-4" onSubmit={handleSubmit}>
               {/* Name */}
               <div className="flex flex-row gap-4">
-                {/* First Name */}
                 <div className="flex-1">
                   <label htmlFor="firstname" className="block text-sm mb-1">
                     First Name
@@ -125,10 +168,10 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     name="firstname"
                     type="text"
                     placeholder="John"
-                    className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-blue-950 focus:ring-2"
+                    className={getInputClass(false)}
                   />
                 </div>
-                {/* Last Name */}
+
                 <div className="flex-1">
                   <label htmlFor="lastname" className="block text-sm mb-1">
                     Last Name
@@ -138,12 +181,11 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     name="lastname"
                     type="text"
                     placeholder="Doe"
-                    className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-blue-950 focus:ring-2"
+                    className={getInputClass(false)}
                   />
                 </div>
               </div>
 
-              {/* Other fields */}
               <div className="space-y-4">
                 {/* Email */}
                 <div className="flex flex-col">
@@ -155,8 +197,11 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     type="email"
                     name="email"
                     placeholder="johndoe@example.com"
-                    className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-blue-950 focus:ring-2"
+                    className={getInputClass(!!errors.email)}
                   />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-red-400">{errors.email}</p>
+                  )}
                 </div>
 
                 {/* Username */}
@@ -168,8 +213,11 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     id="username"
                     type="text"
                     name="username"
-                    className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-blue-950 focus:ring-2"
+                    className={getInputClass(!!errors.username)}
                   />
+                  {errors.username && (
+                    <p className="mt-1 text-xs text-red-400">{errors.username}</p>
+                  )}
                 </div>
 
                 {/* Password */}
@@ -178,41 +226,59 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
                     Password
                   </label>
                   <input
-                    className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-blue-950 focus:ring-2"
+                    className={getInputClass(!!errors.password)}
                     id="password"
                     type="password"
                     name="password"
                     placeholder="••••••••"
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      // clear password errors as user types
+                      setErrors((prev) => ({ ...prev, password: undefined, general: prev.general }));
+                    }}
                   />
+                  {errors.password && (
+                    <p className="mt-1 text-xs text-red-400">{errors.password}</p>
+                  )}
                 </div>
 
                 {/* Confirm Password */}
                 <div className="flex flex-col">
-                  <label
-                    htmlFor="confirmPassword"
-                    className="block text-sm mb-1"
-                  >
+                  <label htmlFor="confirmPassword" className="block text-sm mb-1">
                     Confirm Password
                   </label>
                   <input
-                    className="w-full rounded-lg bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm focus:outline-none focus:ring-blue-950 focus:ring-2"
+                    className={getInputClass(!!errors.confirmPassword)}
                     id="confirmPassword"
                     type="password"
                     name="confirmPassword"
                     placeholder="••••••••"
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        confirmPassword: undefined,
+                        general: prev.general,
+                      }));
+                    }}
                   />
+                  {errors.confirmPassword && (
+                    <p className="mt-1 text-xs text-red-400">
+                      {errors.confirmPassword}
+                    </p>
+                  )}
                 </div>
 
-                {error && (
-                  <p className="text-sm text-red-400 mt-1 text-center">
-                    {error}
+                {/* General error */}
+                {errors.general && (
+                  <p className="text-sm text-red-400 mt-2 text-center">
+                    {errors.general}
                   </p>
                 )}
               </div>
 
-              {/* Submit Button */}
               <button
                 className="w-full mt-2 rounded-lg bg-blue-900 hover:bg-blue-800 disabled:opacity-60 py-2 font-medium transition-colors"
                 type="submit"
@@ -224,10 +290,7 @@ const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 
             <p className="mt-4 text-xs text-zinc-400 text-center">
               Already have an account?{" "}
-              <Link
-                href="/sign-in"
-                className="text-blue-400 hover:text-red-300"
-              >
+              <Link href="/sign-in" className="text-blue-400 hover:text-red-300">
                 Sign in
               </Link>
             </p>
